@@ -72,6 +72,13 @@
                     {% endif %}
                 </ul>
 
+                <div class="d-grid gap-2 mb-4">
+                    <a href="{% url 'staff:detailed_checkout_analysis' room_activity.id %}" class="btn btn-primary">
+                        <i class="fas fa-chart-line"></i> View Detailed Analysis
+                    </a>
+                    <small class="text-muted text-center">See multiple analysis methods and visualizations comparing check-in and check-out</small>
+                </div>
+
                 <div class="row">
                     <!-- Missing Items Section -->
                     <div class="col-md-4">

@@ -1,0 +1,556 @@
+{% extends 'staff/base.html' %}
+
+{% block title %}Room Analysis - {{ room_activity.room_number }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .analysis-card {
+        margin-bottom: 2rem;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .analysis-card .card-header {
+        font-weight: bold;
+        background-color: #f8f9fa;
+    }
+    .analysis-img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 5px;
+    }
+    .analysis-section {
+        margin-bottom: 3rem;
+    }
+    .confidence-meter {
+        height: 25px;
+        border-radius: 5px;
+        margin: 10px 0;
+    }
+    .result-icon {
+        font-size: 2rem;
+        margin-right: 10px;
+    }
+    .detection-list {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+    .detection-item {
+        padding: 8px;
+        margin-bottom: 5px;
+        border-radius: 4px;
+    }
+    .missing-item {
+        background-color: #f8d7da;
+        border: 1px solid #f5c6cb;
+    }
+    .added-item {
+        background-color: #d4edda;
+        border: 1px solid #c3e6cb;
+    }
+    .shifted-item {
+        background-color: #fff3cd;
+        border: 1px solid #ffeeba;
+    }
+    .damage-item {
+        background-color: #f8d7da;
+        border: 1px solid #f5c6cb;
+        padding: 10px;
+        margin-bottom: 10px;
+        border-radius: 5px;
+    }
+    .summary-text {
+        white-space: pre-line;
+        font-size: 16px;
+        line-height: 1.6;
+    }
+    .human-summary {
+        background-color: #f8f9fa;
+        padding: 20px;
+        border-radius: 10px;
+        border-left: 5px solid #0d6efd;
+    }
+    .recommendations {
+        background-color: #e2f3f5;
+        padding: 20px;
+        border-radius: 10px;
+        border-left: 5px solid #20c997;
+    }
+    .hover-zoom {
+        transition: transform 0.3s ease;
+    }
+    .hover-zoom:hover {
+        transform: scale(1.05);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2>Room {{ room_activity.room_number }} Analysis</h2>
+            <p>
+                Check-in: {{ room_activity.check_in_time|date:"F j, Y, g:i a" }}<br>
+                {% if room_activity.check_out_time %}
+                Check-out: {{ room_activity.check_out_time|date:"F j, Y, g:i a" }}
+                {% endif %}
+            </p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'staff:view_comparison' room_activity.id %}" class="btn btn-primary">
+                <i class="fas fa-arrow-left"></i> Back to Basic View
+            </a>
+            <a href="{% url 'staff:analyze_checkout_images' room_activity.id %}" class="btn btn-success">
+                <i class="fas fa-sync"></i> Re-analyze Room
+            </a>
+        </div>
+    </div>
+
+    <!-- Human-readable Summary -->
+    <div class="card analysis-card mb-5">
+        <div class="card-header bg-primary text-white">
+            <h3 class="mb-0">Room Analysis Summary</h3>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h4>Overall Room Condition</h4>
+                    <div class="progress confidence-meter">
+                        <div class="progress-bar 
+                            {% if analysis.confidence_score >= 80 %}bg-success
+                            {% elif analysis.confidence_score >= 60 %}bg-info
+                            {% elif analysis.confidence_score >= 40 %}bg-warning
+                            {% else %}bg-danger{% endif %}" 
+                            role="progressbar" 
+                            style="width: {{ analysis.confidence_score }}%" 
+                            aria-valuenow="{{ analysis.confidence_score }}" 
+                            aria-valuemin="0" 
+                            aria-valuemax="100">
+                            {{ analysis.confidence_score|floatformat:0 }}%
+                        </div>
+                    </div>
+                    <p class="mt-3">
+                        {% if analysis.confidence_score >= 80 %}
+                            <i class="fas fa-check-circle text-success result-icon"></i> 
+                            <strong>Excellent:</strong> Room appears to be in great condition.
+                        {% elif analysis.confidence_score >= 60 %}
+                            <i class="fas fa-info-circle text-info result-icon"></i>
+                            <strong>Good:</strong> Room has some minor changes.
+                        {% elif analysis.confidence_score >= 40 %}
+                            <i class="fas fa-exclamation-triangle text-warning result-icon"></i>
+                            <strong>Needs Attention:</strong> Room has noticeable changes.
+                        {% else %}
+                            <i class="fas fa-times-circle text-danger result-icon"></i>
+                            <strong>Significant Concern:</strong> Room has major differences.
+                        {% endif %}
+                    </p>
+
+                    <div class="human-summary mt-4">
+                        <h5><i class="fas fa-list-alt me-2"></i> Analysis Results</h5>
+                        <div class="summary-text">{{ analysis.simple_summary }}</div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="recommendations">
+                        <h5><i class="fas fa-clipboard-check me-2"></i> Recommendations</h5>
+                        <div class="summary-text">{{ analysis.recommendations }}</div>
+                    </div>
+                    
+                    <div class="card mt-4">
+                        <div class="card-body">
+                            <h5>Quick Stats</h5>
+                            <div class="row text-center">
+                                <div class="col-4">
+                                    <div class="p-3 border rounded bg-light">
+                                        <h3 class="text-danger">{{ summary.yolo.missing_count }}</h3>
+                                        <p class="mb-0">Missing<br>Items</p>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="p-3 border rounded bg-light">
+                                        <h3 class="text-primary">{{ summary.yolo.added_count }}</h3>
+                                        <p class="mb-0">New<br>Items</p>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="p-3 border rounded bg-light">
+                                        <h3 class="{% if summary.damage.damage_count > 0 %}text-danger{% else %}text-success{% endif %}">
+                                            {{ summary.damage.damage_count|default:"0" }}
+                                        </h3>
+                                        <p class="mb-0">Damage<br>Detected</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Original Images -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0">Check-in Image</h5>
+                </div>
+                <div class="card-body text-center">
+                    {% if analysis.checkin_image %}
+                        <img src="{{ analysis.checkin_image.url }}" class="analysis-img img-fluid hover-zoom" alt="Check-in Image">
+                    {% else %}
+                        <div class="alert alert-warning">Check-in image not available</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0">Check-out Image</h5>
+                </div>
+                <div class="card-body text-center">
+                    {% if analysis.checkout_image %}
+                        <img src="{{ analysis.checkout_image.url }}" class="analysis-img img-fluid hover-zoom" alt="Check-out Image">
+                    {% else %}
+                        <div class="alert alert-warning">Check-out image not available</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Heatmap Analysis -->
+    <div class="analysis-section">
+        <div class="card analysis-card">
+            <div class="card-header bg-primary text-white">
+                <h3 class="mb-0">Visual Change Heatmap</h3>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5>Change Intensity</h5>
+                        
+                        {% if analysis.heatmap_result %}
+                            {% with heatmap=analysis.get_heatmap_result %}
+                                {% if heatmap.error %}
+                                    <div class="alert alert-warning">
+                                        {{ heatmap.error }}
+                                    </div>
+                                {% else %}
+                                    <div class="card mb-4">
+                                        <div class="card-body">
+                                            <div class="row">
+                                                <div class="col-6 text-center">
+                                                    <h3>{{ heatmap.change_percentage|floatformat:1 }}%</h3>
+                                                    <p>Room Area Changed</p>
+                                                </div>
+                                                <div class="col-6 text-center">
+                                                    <h3>{{ heatmap.num_change_regions }}</h3>
+                                                    <p>Change Regions</p>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="progress mt-3" style="height: 20px;">
+                                                <div class="progress-bar 
+                                                    {% if heatmap.change_percentage < 10 %}bg-success
+                                                    {% elif heatmap.change_percentage < 25 %}bg-info
+                                                    {% elif heatmap.change_percentage < 40 %}bg-warning
+                                                    {% else %}bg-danger{% endif %}" 
+                                                    role="progressbar" 
+                                                    style="width: {{ heatmap.change_percentage }}%" 
+                                                    aria-valuenow="{{ heatmap.change_percentage }}" 
+                                                    aria-valuemin="0" 
+                                                    aria-valuemax="100">
+                                                    {{ heatmap.change_percentage|floatformat:1 }}%
+                                                </div>
+                                            </div>
+                                            
+                                            <p class="mt-3">
+                                                {% if heatmap.change_percentage < 10 %}
+                                                    <i class="fas fa-check-circle text-success"></i> 
+                                                    <strong>Minimal changes</strong> detected between check-in and check-out.
+                                                {% elif heatmap.change_percentage < 25 %}
+                                                    <i class="fas fa-info-circle text-info"></i>
+                                                    <strong>Moderate changes</strong> detected in the room.
+                                                {% elif heatmap.change_percentage < 40 %}
+                                                    <i class="fas fa-exclamation-triangle text-warning"></i>
+                                                    <strong>Significant changes</strong> detected that require attention.
+                                                {% else %}
+                                                    <i class="fas fa-times-circle text-danger"></i>
+                                                    <strong>Major changes</strong> detected throughout the room.
+                                                {% endif %}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h6 class="mb-0">What is a heatmap?</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <p>The heatmap shows where changes were detected between the check-in and check-out photos:</p>
+                                            <ul>
+                                                <li><span class="badge bg-danger">Red/Yellow areas</span>: Major changes detected</li>
+                                                <li><span class="badge bg-info">Blue areas</span>: Minor changes detected</li>
+                                                <li><span class="badge bg-dark">Dark areas</span>: No significant changes</li>
+                                            </ul>
+                                            <p class="small text-muted">Changes can include moved furniture, added/removed items, lighting differences, or other visual changes.</p>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            {% endwith %}
+                        {% else %}
+                            <div class="alert alert-info">Heatmap analysis not available.</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <h5>Visualization</h5>
+                        {% if analysis.heatmap_visualization %}
+                            <img src="{{ analysis.heatmap_visualization.url }}" class="analysis-img img-fluid hover-zoom" alt="Heatmap Analysis">
+                        {% else %}
+                            <div class="alert alert-info">Heatmap visualization not available.</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Damage Detection -->
+    <div class="analysis-section">
+        <div class="card analysis-card">
+            <div class="card-header bg-primary text-white">
+                <h3 class="mb-0">Damage Assessment</h3>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5>Detected Issues</h5>
+                        
+                        {% if analysis.damage_detection_result %}
+                            {% with damage_result=analysis.get_damage_detection_result %}
+                                {% if damage_result.error %}
+                                    <div class="alert alert-warning">
+                                        {{ damage_result.error }}
+                                    </div>
+                                {% else %}
+                                    {% if damage_result.damages and damage_result.damages|length > 0 %}
+                                        <div class="alert alert-warning">
+                                            <h6><i class="fas fa-exclamation-triangle me-2"></i> {{ damage_result.damages|length }} issue(s) detected in the room</h6>
+                                        </div>
+                                        
+                                        <div class="detection-list">
+                                            {% for damage in damage_result.damages %}
+                                                <div class="damage-item">
+                                                    <div class="d-flex justify-content-between">
+                                                        <h6>{{ damage.type|title }}</h6>
+                                                        <span class="badge {% if damage.severity == 'minor' %}bg-info
+                                                                    {% elif damage.severity == 'moderate' %}bg-warning
+                                                                    {% else %}bg-danger{% endif %}">
+                                                            {{ damage.severity|title }}
+                                                        </span>
+                                                    </div>
+                                                    <p class="mb-1"><strong>Location:</strong> {{ damage.location }}</p>
+                                                    <p class="mb-0 small">{{ damage.description }}</p>
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    {% else %}
+                                        <div class="alert alert-success">
+                                            <h6><i class="fas fa-check-circle me-2"></i> No damage detected</h6>
+                                            <p class="mb-0">The room appears to be in good condition with no visible damage.</p>
+                                        </div>
+                                    {% endif %}
+                                    
+                                    {% if damage_result.summary %}
+                                        <div class="card mt-3">
+                                            <div class="card-body">
+                                                <h6>Summary Assessment:</h6>
+                                                <p class="mb-0">{{ damage_result.summary }}</p>
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                {% endif %}
+                            {% endwith %}
+                        {% else %}
+                            <div class="alert alert-info">Damage assessment not available.</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <h5>Visualization</h5>
+                        {% if analysis.damage_visualization %}
+                            <img src="{{ analysis.damage_visualization.url }}" class="analysis-img img-fluid hover-zoom" alt="Damage Detection">
+                        {% else %}
+                            <div class="alert alert-info">
+                                <h6>How damage detection works:</h6>
+                                <p>Our system uses advanced AI to identify potential damage in the room, including:</p>
+                                <ul>
+                                    <li>Stains or marks on furniture, walls, or floors</li>
+                                    <li>Broken or damaged furniture</li>
+                                    <li>Scratches, dents, or other surface damage</li>
+                                    <li>Issues with fixtures or fittings</li>
+                                </ul>
+                                <p class="mb-0 small text-muted">When damage is detected, it's highlighted on the check-out image with information about its severity and location.</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Spatial Analysis -->
+    <div class="analysis-section">
+        <div class="card analysis-card">
+            <div class="card-header bg-primary text-white">
+                <h3 class="mb-0">Room Layout Analysis</h3>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5>What Changed?</h5>
+                        {% if spatial_result %}
+                            {% if spatial_result.error %}
+                                <div class="alert alert-warning">
+                                    {{ spatial_result.error }}
+                                </div>
+                            {% else %}
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h6>Room Description:</h6>
+                                        <p>{{ spatial_result.description|default:"No description available" }}</p>
+                                        
+                                        {% if spatial_result.changes %}
+                                            <h6>Changes Detected:</h6>
+                                            <ul class="list-group">
+                                                {% for change in spatial_result.changes %}
+                                                    <li class="list-group-item">{{ change }}</li>
+                                                {% endfor %}
+                                            </ul>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endif %}
+                        {% else %}
+                            <div class="alert alert-info">No spatial analysis available.</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <h5>Visualization</h5>
+                        {% if analysis.spatial_visualization %}
+                            <img src="{{ analysis.spatial_visualization.url }}" class="analysis-img img-fluid hover-zoom" alt="Spatial Analysis">
+                        {% else %}
+                            <div class="alert alert-info">Spatial analysis visualization not available.</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Technical Analysis Section (Collapsed by Default) -->
+    <div class="accordion mb-5" id="technicalAnalysisAccordion">
+        <div class="accordion-item">
+            <h2 class="accordion-header" id="technicalHeading">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#technicalCollapse" aria-expanded="false" aria-controls="technicalCollapse">
+                    <i class="fas fa-cogs me-2"></i> Technical Analysis Details (Advanced)
+                </button>
+            </h2>
+            <div id="technicalCollapse" class="accordion-collapse collapse" aria-labelledby="technicalHeading" data-bs-parent="#technicalAnalysisAccordion">
+                <div class="accordion-body">
+                    <div class="row">
+                        <!-- Feature Matching Analysis -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100">
+                                <div class="card-header bg-light">
+                                    <h5 class="mb-0">Feature Matching Analysis</h5>
+                                </div>
+                                <div class="card-body">
+                                    {% if feature_result %}
+                                        {% if feature_result.error %}
+                                            <div class="alert alert-warning">{{ feature_result.error }}</div>
+                                        {% else %}
+                                            <div class="row mb-3">
+                                                <div class="col-6 text-center">
+                                                    <h6>Match %:</h6>
+                                                    <h3>{{ feature_result.match_percentage|floatformat:1 }}%</h3>
+                                                </div>
+                                                <div class="col-6 text-center">
+                                                    <h6>Difference:</h6>
+                                                    <h3>{{ feature_result.difference_score|floatformat:1 }}%</h3>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="progress confidence-meter">
+                                                <div class="progress-bar 
+                                                    {% if feature_result.difference_score < 20 %}bg-success
+                                                    {% elif feature_result.difference_score < 40 %}bg-info
+                                                    {% elif feature_result.difference_score < 60 %}bg-warning
+                                                    {% else %}bg-danger{% endif %}" 
+                                                    role="progressbar" 
+                                                    style="width: {{ feature_result.difference_score }}%" 
+                                                    aria-valuenow="{{ feature_result.difference_score }}" 
+                                                    aria-valuemin="0" 
+                                                    aria-valuemax="100">
+                                                    {{ feature_result.difference_score|floatformat:1 }}%
+                                                </div>
+                                            </div>
+                                            
+                                            {% if analysis.feature_matching_visualization %}
+                                                <img src="{{ analysis.feature_matching_visualization.url }}" class="img-fluid mt-3" alt="Feature Matching">
+                                            {% endif %}
+                                        {% endif %}
+                                    {% else %}
+                                        <div class="alert alert-info">Feature matching analysis not available.</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Color Histogram Analysis -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100">
+                                <div class="card-header bg-light">
+                                    <h5 class="mb-0">Color Histogram Analysis</h5>
+                                </div>
+                                <div class="card-body">
+                                    {% if color_result %}
+                                        {% if color_result.error %}
+                                            <div class="alert alert-warning">{{ color_result.error }}</div>
+                                        {% else %}
+                                            <table class="table table-sm">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Method</th>
+                                                        <th>Difference</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for method, values in color_result.items %}
+                                                    <tr>
+                                                        <td>{{ method }}</td>
+                                                        <td>{{ values.difference|floatformat:4 }}</td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                            
+                                            {% if analysis.color_histogram_visualization %}
+                                                <img src="{{ analysis.color_histogram_visualization.url }}" class="img-fluid mt-3" alt="Color Histogram">
+                                            {% endif %}
+                                        {% endif %}
+                                    {% else %}
+                                        <div class="alert alert-info">Color histogram analysis not available.</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
