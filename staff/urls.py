@@ -20,4 +20,7 @@ urlpatterns = [
     path('room/check-out/upload/<int:activity_id>/', views.upload_checkout_image, name='upload_checkout_image'),
     path('room/comparison/<int:activity_id>/', views.view_comparison, name='view_comparison'),
     path('room/mark-as-ok/<int:activity_id>/', views.mark_item_as_ok, name='mark_item_as_ok'),
+    path('room/detailed-analysis/<int:activity_id>/', views.detailed_checkout_analysis, name='detailed_checkout_analysis'),
+    path('room/analyze-checkout/<int:activity_id>/', views.analyze_checkout_images, name='analyze_checkout_images'),
+    path('api/analyze-checkout/', views.analyze_checkout, name='api_analyze_checkout'),
 ] 
