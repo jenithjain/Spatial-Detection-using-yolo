@@ -158,6 +158,27 @@ class Command(BaseCommand):
                     {'name': 'Chair', 'quantity': 2, 'description': 'Wooden chairs'},
                     {'name': 'TV', 'quantity': 1, 'description': '32-inch LCD TV'}
                 ]
+            },
+            {
+                'number': '202',
+                'type': 'Deluxe',
+                'inventory': [
+                    {'name': 'Bed', 'quantity': 1, 'description': 'Queen size bed'},
+                    {'name': 'Pillow', 'quantity': 1, 'description': 'Bed pillow'},
+                    {'name': 'Nightstand', 'quantity': 2, 'description': 'Bedside tables'},
+                    {'name': 'Lamp', 'quantity': 3, 'description': 'Room lamps'},
+                    {'name': 'TV', 'quantity': 1, 'description': '42-inch Smart TV'},
+                    {'name': 'Desk', 'quantity': 1, 'description': 'Work desk'},
+                    {'name': 'Chair', 'quantity': 1, 'description': 'Desk chair'},
+                    {'name': 'Artwork', 'quantity': 1, 'description': 'Wall art'},
+                    {'name': 'Curtains', 'quantity': 1, 'description': 'Window curtains'},
+                    {'name': 'Window', 'quantity': 1, 'description': 'Room window'},
+                    {'name': 'Armchair', 'quantity': 1, 'description': 'Comfortable armchair'},
+                    {'name': 'Ottoman', 'quantity': 1, 'description': 'Footrest'},
+                    {'name': 'Table', 'quantity': 1, 'description': 'Coffee table'},
+                    {'name': 'Headboard', 'quantity': 1, 'description': 'Bed headboard'},
+                    {'name': 'Blanket', 'quantity': 1, 'description': 'Bed blanket'}
+                ]
             }
         ]
 
