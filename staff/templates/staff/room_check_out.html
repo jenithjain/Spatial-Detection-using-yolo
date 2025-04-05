@@ -1,42 +1,658 @@
-{% extends 'staff/base.html' %}
-
-{% block content %}
-<div class="container mt-4">
-    <div class="card shadow">
-        <div class="card-header bg-primary text-white">
-            <h4 class="mb-0">Room Check-Out - Room {{ room_activity.room_number }}</h4>
-        </div>
-        <div class="card-body">
-            <div class="alert alert-info">
-                <h5 class="alert-heading">Room Details</h5>
-                <p><strong>Room:</strong> {{ room_activity.room_number }}</p>
-                <p><strong>Check-In Time:</strong> {{ room_activity.check_in_time }}</p>
-                {% if room_activity.notes %}
-                <p><strong>Notes:</strong> {{ room_activity.notes }}</p>
-                {% endif %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Room Check-Out - ScanFlow</title>
+    <!-- Add Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+<div class="checkout-container">
+    <div class="background-grid"></div>
+    <div class="decoration-circle-1"></div>
+    <div class="decoration-circle-2"></div>
+    
+    <div class="app-header">
+        <div class="header-content">
+            <div class="brand-section">
+                <div class="logo-box">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="bot-icon">
+                        <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path>
+                        <path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path>
+                        <path d="M18 12a2 2 0 0 0 0 4h4v-4Z"></path>
+                    </svg>
+                </div>
+                <h1>ScanFlow</h1>
             </div>
-            
-            <p class="lead">Complete the check-out process for this room. You'll be prompted to upload a photo for comparison after submitting this form.</p>
-            
-            <form method="post" class="mt-4">
-                {% csrf_token %}
-                
-                <div class="form-group mb-3">
-                    <label for="{{ form.notes.id_for_label }}" class="form-label">Check-Out Notes</label>
-                    {{ form.notes }}
-                    <div class="form-text">Optional: Add any notes about the room's condition at check-out.</div>
+            <div class="nav-actions">
+                <a href="{% url 'staff:dashboard' %}" class="nav-link">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M19 12H5M12 19l-7-7 7-7"/>
+                    </svg>
+                    <span>Back to Dashboard</span>
+                </a>
+                <div class="tag-badge">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="star-icon">
+                        <path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"></path>
+                    </svg>
+                    <span>Room Check-Out</span>
                 </div>
-                
-                <div class="d-flex justify-content-between mt-4">
-                    <a href="{% url 'staff:dashboard' %}" class="btn btn-secondary">
-                        <i class="fas fa-arrow-left"></i> Back to Dashboard
-                    </a>
-                    <button type="submit" class="btn btn-success">
-                        <i class="fas fa-check"></i> Complete Check-Out & Continue to Photo Upload
-                    </button>
-                </div>
-            </form>
+            </div>
         </div>
     </div>
+
+    <div class="main-content">
+        <div class="room-info-section">
+            <div class="room-number">
+                <h2>Room {{ room_activity.room_number }}</h2>
+                <p class="check-time">Check-In: {{ room_activity.check_in_time }}</p>
+            </div>
+            {% if room_activity.notes %}
+            <div class="check-in-notes">
+                <h3>Check-In Notes:</h3>
+                <p>{{ room_activity.notes }}</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="form-container">
+            <div class="form-box">
+                <div class="form-content">
+                    <div class="header-text">
+                        <h2>Room Check-Out</h2>
+                        <p>Complete the check-out process for this room</p>
+                    </div>
+
+                    {% if messages %}
+                    <div class="messages">
+                        {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }}">
+                            {{ message }}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <form method="post" class="checkout-form">
+                        {% csrf_token %}
+                        
+                        <div class="input-group">
+                            <div class="input-field">
+                                <label for="{{ form.notes.id_for_label }}">Check-Out Notes</label>
+                                <div class="input-with-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                        <polyline points="14 2 14 8 20 8"></polyline>
+                                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                                        <polyline points="10 9 9 9 8 9"></polyline>
+                                    </svg>
+                                    {{ form.notes }}
+                                </div>
+                                <div class="form-hint">Optional: Add any notes about the room's condition at check-out.</div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="submit-button">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                            </svg>
+                            Complete Check-Out & Continue
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="room-status-section">
+        <div class="status-card">
+            <div class="status-icon pending-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+            </div>
+            <div class="status-text">
+                <h3>Check-Out Pending</h3>
+                <p>Complete the form to proceed with check-out</p>
+            </div>
+        </div>
+        
+        <div class="process-steps">
+            <div class="step completed">
+                <div class="step-number">1</div>
+                <div class="step-text">Check-In</div>
+            </div>
+            <div class="step active">
+                <div class="step-number">2</div>
+                <div class="step-text">Check-Out</div>
+            </div>
+            <div class="step">
+                <div class="step-number">3</div>
+                <div class="step-text">Photo Verification</div>
+            </div>
+            <div class="step">
+                <div class="step-number">4</div>
+                <div class="step-text">Completion</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="theme-switch">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path>
+            <path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path>
+            <path d="M18 12a2 2 0 0 0 0 4h4v-4Z"></path>
+        </svg>
+        <span>Room Scanner</span>
+    </div>
 </div>
-{% endblock %} 
+
+<style>
+:root {
+    --primary-color: #D6F32F;
+    --text-color: #151616;
+    --background-color: #FFFFF4;
+    --card-bg: #ffffff;
+    --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+}
+
+.checkout-container {
+    min-height: 100vh;
+    background-color: var(--background-color);
+    position: relative;
+    overflow: hidden;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    grid-template-columns: 1fr;
+}
+
+.background-grid {
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(rgb(21, 22, 22) 1px, transparent 1px);
+    background-size: 24px 24px;
+    opacity: 0.1;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.decoration-circle-1 {
+    position: absolute;
+    top: 5rem;
+    right: 5rem;
+    width: 5rem;
+    height: 5rem;
+    background-color: var(--primary-color);
+    border-radius: 50%;
+    opacity: 0.2;
+    transform: translateY(0.271px) rotate(3.579deg);
+    z-index: 0;
+}
+
+.decoration-circle-2 {
+    position: absolute;
+    bottom: 10rem;
+    left: 5rem;
+    width: 4rem;
+    height: 4rem;
+    background-color: var(--primary-color);
+    border-radius: 50%;
+    opacity: 0.1;
+    transform: translateY(-9.343px) rotate(0.245deg);
+    z-index: 0;
+}
+
+.app-header {
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+    position: relative;
+    z-index: 1;
+}
+
+.header-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.brand-section {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.logo-box {
+    width: 3rem;
+    height: 3rem;
+    background-color: var(--primary-color);
+    border-radius: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--text-color);
+    box-shadow: 4px 4px 0px 0px var(--text-color);
+}
+
+.bot-icon {
+    width: 1.5rem;
+    height: 1.5rem;
+    color: var(--text-color);
+}
+
+.brand-section h1 {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--text-color);
+    margin: 0;
+}
+
+.nav-actions {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.nav-link {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+    color: var(--text-color);
+    font-weight: 500;
+    font-size: 0.875rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.5rem;
+    transition: all 0.2s;
+    background-color: rgba(214, 243, 47, 0.2);
+}
+
+.nav-link:hover {
+    background-color: rgba(214, 243, 47, 0.4);
+}
+
+.tag-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background-color: rgba(214, 243, 47, 0.2);
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    border: 2px solid var(--text-color);
+}
+
+.star-icon {
+    width: 1rem;
+    height: 1rem;
+    color: var(--text-color);
+}
+
+.tag-badge span {
+    font-size: 0.875rem;
+    color: var(--text-color);
+}
+
+.main-content {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+    position: relative;
+    z-index: 1;
+}
+
+@media (min-width: 1024px) {
+    .main-content {
+        grid-template-columns: 3fr 2fr;
+    }
+}
+
+.room-info-section {
+    background-color: var(--card-bg);
+    padding: 1.5rem;
+    border-radius: 0.75rem;
+    border: 2px solid var(--text-color);
+    box-shadow: 4px 4px 0px 0px var(--text-color);
+    margin-bottom: 1.5rem;
+}
+
+.room-number {
+    margin-bottom: 1rem;
+}
+
+.room-number h2 {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+}
+
+.check-time {
+    font-size: 0.875rem;
+    color: rgba(21, 22, 22, 0.7);
+}
+
+.check-in-notes {
+    padding-top: 1rem;
+    border-top: 1px solid rgba(0,0,0,0.1);
+}
+
+.check-in-notes h3 {
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.form-container {
+    max-width: 100%;
+    width: 100%;
+}
+
+.form-box {
+    background-color: white;
+    padding: 2rem;
+    border-radius: 0.75rem;
+    border: 2px solid var(--text-color);
+    box-shadow: 4px 4px 0px 0px var(--text-color);
+    width: 100%;
+}
+
+.header-text {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.header-text h2 {
+    font-size: 1.875rem;
+    font-weight: bold;
+    color: var(--text-color);
+    margin: 0 0 0.5rem 0;
+}
+
+.header-text p {
+    color: rgba(21, 22, 22, 0.7);
+    margin: 0;
+}
+
+.checkout-form {
+    margin-bottom: 1.5rem;
+}
+
+.input-group {
+    margin-bottom: 1.5rem;
+}
+
+.input-field {
+    margin-bottom: 1rem;
+}
+
+.input-field label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: rgba(21, 22, 22, 0.7);
+    margin-bottom: 0.5rem;
+}
+
+.input-with-icon {
+    position: relative;
+}
+
+.input-with-icon svg {
+    position: absolute;
+    left: 0.75rem;
+    top: 1.5rem;
+    width: 1.25rem;
+    height: 1.25rem;
+    color: rgba(21, 22, 22, 0.4);
+    transform: translateY(-50%);
+}
+
+.input-with-icon textarea {
+    width: 100%;
+    padding: 0.75rem 1rem 0.75rem 2.5rem;
+    border-radius: 0.75rem;
+    border: 2px solid var(--text-color);
+    outline: none;
+    box-sizing: border-box;
+    font-size: 1rem;
+    font-family: inherit;
+    min-height: 120px;
+    resize: vertical;
+}
+
+.input-with-icon textarea:focus {
+    box-shadow: 0 0 0 2px var(--primary-color);
+}
+
+.form-hint {
+    font-size: 0.75rem;
+    color: rgba(21, 22, 22, 0.6);
+    margin-top: 0.5rem;
+}
+
+.submit-button {
+    width: 100%;
+    padding: 0.75rem 1.5rem;
+    background-color: var(--primary-color);
+    border-radius: 0.75rem;
+    border: 2px solid var(--text-color);
+    box-shadow: 4px 4px 0px 0px var(--text-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 1rem;
+    color: var(--text-color);
+}
+
+.submit-button:hover {
+    box-shadow: 2px 2px 0px 0px var(--text-color);
+    transform: translate(2px, 2px);
+}
+
+.submit-button svg {
+    width: 1.25rem;
+    height: 1.25rem;
+}
+
+.room-status-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    align-items: center;
+}
+
+.status-card {
+    background-color: var(--card-bg);
+    padding: 1.5rem;
+    border-radius: 0.75rem;
+    border: 2px solid var(--text-color);
+    box-shadow: 4px 4px 0px 0px var(--text-color);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    width: 100%;
+}
+
+.status-icon {
+    width: 3rem;
+    height: 3rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.pending-icon {
+    background-color: rgba(255, 194, 10, 0.2);
+}
+
+.pending-icon svg {
+    color: #FFB800;
+}
+
+.status-text h3 {
+    font-size: 1.25rem;
+    margin-bottom: 0.25rem;
+}
+
+.status-text p {
+    font-size: 0.875rem;
+    color: rgba(21, 22, 22, 0.7);
+    margin: 0;
+}
+
+.process-steps {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    position: relative;
+    padding: 1rem 0;
+}
+
+.process-steps::before {
+    content: '';
+    position: absolute;
+    top: 2rem;
+    left: 2rem;
+    right: 2rem;
+    height: 2px;
+    background-color: rgba(0,0,0,0.1);
+    z-index: 0;
+}
+
+.step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    z-index: 1;
+}
+
+.step-number {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    background-color: white;
+    border: 2px solid rgba(0,0,0,0.2);
+    margin-bottom: 0.5rem;
+}
+
+.step-text {
+    font-size: 0.75rem;
+    text-align: center;
+    max-width: 80px;
+}
+
+.step.completed .step-number {
+    background-color: var(--primary-color);
+    border-color: var(--text-color);
+}
+
+.step.active .step-number {
+    background-color: var(--primary-color);
+    border-color: var(--text-color);
+    box-shadow: 0 0 0 2px rgba(214, 243, 47, 0.3);
+}
+
+.theme-switch {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background-color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 0.75rem;
+    border: 2px solid var(--text-color);
+    box-shadow: 4px 4px 0px 0px var(--text-color);
+    z-index: 10;
+}
+
+.theme-switch svg {
+    width: 1rem;
+    height: 1rem;
+    color: var(--text-color);
+}
+
+.theme-switch span {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-color);
+}
+
+.alert {
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border-radius: 0.5rem;
+    border: 2px solid var(--text-color);
+}
+
+.alert-success {
+    background-color: rgba(214, 243, 47, 0.2);
+}
+
+.alert-error {
+    background-color: rgba(255, 0, 0, 0.1);
+}
+
+@media (max-width: 768px) {
+    .main-content {
+        grid-template-columns: 1fr;
+        padding: 1.5rem;
+    }
+    
+    .header-content {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .nav-actions {
+        width: 100%;
+        justify-content: space-between;
+    }
+    
+    .process-steps {
+        overflow-x: auto;
+        padding-bottom: 1rem;
+    }
+    
+    .process-steps .step {
+        margin: 0 1rem;
+    }
+    
+    .decoration-circle-1,
+    .decoration-circle-2 {
+        display: none;
+    }
+}
+</style>
+</body>
+</html> 
