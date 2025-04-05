@@ -97,14 +97,16 @@
                             <tr>
                                 <td>{{ object }}</td>
                                 <td>{{ count }}</td>
-                                <td>{{ checkout_objects|get_item:object|default:"0" }}</td>
+                                {% with checkout_count=checkout_objects|get_item:object|default:"0" %}
+                                <td>{{ checkout_count }}</td>
                                 <td>
-                                    {% if checkout_objects|get_item:object|default:"0" < count %}
-                                    <span class="badge bg-danger">Missing ({{ count|subtract:checkout_objects|get_item:object|default:"0" }})</span>
+                                    {% if checkout_count < count %}
+                                    <span class="badge bg-danger">Missing ({{ count|subtract:checkout_count }})</span>
                                     {% else %}
                                     <span class="badge bg-success">OK</span>
                                     {% endif %}
                                 </td>
+                                {% endwith %}
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -149,9 +151,15 @@
             <div class="modal-body">
                 <p>The following items appear to be missing:</p>
                 <ul>
-                {% for item, count in room_activity.missing_items_details|pprint %}
-                    <li>{{ item }}: {{ count }}</li>
-                {% endfor %}
+                {% with missing_items=room_activity.get_missing_items %}
+                    {% if missing_items %}
+                        {% for item, count in missing_items.items %}
+                            <li>{{ item }}: {{ count }}</li>
+                        {% endfor %}
+                    {% else %}
+                        <li>Details not available</li>
+                    {% endif %}
+                {% endwith %}
                 </ul>
                 <p>Would you like to report these missing items to management?</p>
             </div>

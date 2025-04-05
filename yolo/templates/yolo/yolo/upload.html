@@ -74,7 +74,12 @@
         <h1>Room Object Detection</h1>
         <div class="upload-form">
             <form id="uploadForm">
+                {% csrf_token %}
                 <input type="file" id="imageInput" accept="image/*" required>
+                <select id="detectionType" style="margin-right: 10px; padding: 8px;">
+                    <option value="checkin">Check-in Image</option>
+                    <option value="checkout">Check-out Image</option>
+                </select>
                 <button type="submit">Process Image</button>
             </form>
         </div>
@@ -94,6 +99,14 @@
             <a id="compareLink" style="display: none;">
                 <button class="compare-btn">Go to Comparison Page</button>
             </a>
+            
+            <div style="margin-top: 20px; padding: 15px; background-color: #f0f0f0; border-radius: 8px;">
+                <h3>Go to Existing Comparison</h3>
+                <form action="{% url 'yolo:compare' %}" method="get">
+                    <input type="text" name="session_id" placeholder="Enter Session ID" required style="padding: 8px; margin-right: 10px;">
+                    <button type="submit" class="compare-btn">Go to Comparison</button>
+                </form>
+            </div>
         </div>
     </div>
 
@@ -117,12 +130,18 @@
 
             const formData = new FormData();
             formData.append('image', imageInput.files[0]);
-            formData.append('detection_type', 'shelf'); // Default to shelf images
+            
+            // Get the selected detection type
+            const detectionType = document.getElementById('detectionType').value;
+            formData.append('detection_type', detectionType);
             
             // If we already have a session ID, use it
             if (currentSessionId) {
                 formData.append('session_id', currentSessionId);
             }
+            
+            // Add CSRF token
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
             loading.style.display = 'block';
             resultImage.style.display = 'none';
@@ -131,6 +150,9 @@
             try {
                 const response = await fetch('/yolo/process-image/', {
                     method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrfToken
+                    },
                     body: formData
                 });
 

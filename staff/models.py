@@ -37,3 +37,35 @@ class RoomActivity(models.Model):
     class Meta:
         ordering = ['-check_in_time']
         verbose_name_plural = "Room Activities"
+
+    def get_missing_items(self):
+        """Safely get missing items as a dictionary for template use"""
+        if not self.missing_items_details:
+            return {}
+        
+        try:
+            import json
+            missing_items = json.loads(self.missing_items_details)
+            
+            # If it's already a dict, just return it
+            if isinstance(missing_items, dict):
+                return missing_items
+                
+            # If it's a list, try to convert to dict
+            if isinstance(missing_items, list):
+                result = {}
+                for item in missing_items:
+                    if isinstance(item, dict) and len(item) == 1:
+                        key, value = next(iter(item.items()))
+                        result[key] = value
+                    else:
+                        # Handle simple strings or other formats
+                        result[str(item)] = 1
+                return result
+            
+            # If it's a string or other type, return a dict with that as a key
+            return {str(missing_items): 1}
+            
+        except Exception as e:
+            print(f"Error parsing missing items: {e}")
+            return {'error': 'Could not parse missing items'}

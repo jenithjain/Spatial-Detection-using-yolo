@@ -1,34 +1,330 @@
 from django.shortcuts import render, redirect
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from ultralytics import YOLO
 import os
 import uuid
 import json
 from django.conf import settings
 import base64
 import cv2
-import torch
 import numpy as np
+import requests
+from PIL import Image, ImageDraw, ImageColor, ImageFont
+import io
 from .models import Detection
 from django.core.files.base import ContentFile
+from pydantic import BaseModel
+from typing import List
 
-# Initialize YOLO model
+# Configure matplotlib to use a non-interactive backend to avoid tkinter threading issues
+import matplotlib
+matplotlib.use('Agg')  # Must be set before importing pyplot
+import matplotlib.pyplot as plt
+from matplotlib.patches import Rectangle
+from google.api_core import retry
+import time
+
+# Define BoundingBox class using Pydantic for validation
+class BoundingBox(BaseModel):
+    box_2d: List[int]
+    label: str
+
+# Initialize Gemini model
 try:
-    model = YOLO('yolov8x.pt')  # Load YOLOv8x model
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    model.to(device)
-    print(f"Loaded YOLOv8x model on {device}")
+    import google.generativeai as genai
+    
+    # Replace with your API key
+    API_KEY = "AIzaSyALnrV7Cb5fM8_PdYJGGcn2xIC932m8XVQ"  # You should store this securely, e.g., in environment variables
+    genai.configure(api_key=API_KEY)
+    
+    # Configure the Gemini Pro Vision model with better settings from gemini_spatial.py
+    generation_config = {
+        "temperature": 0.4,
+        "top_p": 1,
+        "top_k": 32,
+        "max_output_tokens": 4096,
+    }
+    
+    safety_settings = [
+        {"category": "HARM_CATEGORY_HARASSMENT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
+        {"category": "HARM_CATEGORY_HATE_SPEECH", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
+        {"category": "HARM_CATEGORY_SEXUALLY_EXPLICIT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
+        {"category": "HARM_CATEGORY_DANGEROUS_CONTENT", "threshold": "BLOCK_MEDIUM_AND_ABOVE"},
+    ]
+    
+    model = genai.GenerativeModel(
+        model_name="gemini-2.0-flash",
+        generation_config=generation_config,
+        safety_settings=safety_settings
+    )
+    
+    # Test that the model works
+    test_response = model.generate_content("Hello")
+    if not test_response:
+        raise Exception("Model response test failed")
+        
+    print(f"Successfully loaded Gemini 2.0-flash model")
 except Exception as e:
-    print(f"Error loading model: {str(e)}")
+    print(f"Error loading Gemini model: {str(e)}")
     model = None
+
+def encode_image(image_path):
+    """Convert image to base64 encoding for Gemini API"""
+    if isinstance(image_path, str):
+        with open(image_path, "rb") as image_file:
+            return base64.b64encode(image_file.read()).decode('utf-8')
+    else:
+        # If we're passed a PIL Image object
+        buffered = io.BytesIO()
+        image_path.save(buffered, format="JPEG")
+        return base64.b64encode(buffered.getvalue()).decode("utf-8")
+
+# Enhanced function to label objects with coordinates from gemini_spatial.py
+@retry.Retry(predicate=retry.if_exception_type(Exception))
+def detect_objects_with_gemini(image_path):
+    """
+    Use Gemini to detect objects in an image with enhanced spatial understanding
+    Returns a list of detected objects with their descriptions
+    """
+    try:
+        # Read the image
+        img = Image.open(image_path)
+        
+        # Use the improved prompt format from gemini_spatial.py
+        prompt = """
+        Detect and identify ALL objects present in this hotel room image with precise bounding boxes.
+        
+        IMPORTANT INSTRUCTIONS:
+        - Identify every visible object in the room (furniture, fixtures, decor, etc.)
+        - Create tight, accurate bounding boxes around each object
+        - Ensure coordinates are precise and match the actual object position
+        - Label common hotel room items: bed, TV, chairs, tables, lamps, artwork, etc.
+        - Don't miss small but important objects
+        - Limit to no more than 20 most significant items
+        
+        For each object, provide:
+        1. A simple, clear object name (single word preferred)
+        2. A brief description
+        3. PRECISE bounding box coordinates as [x1, y1, x2, y2] where:
+           - x1, y1: top-left corner (0.0 to 1.0)
+           - x2, y2: bottom-right corner (0.0 to 1.0)
+        
+        Return ONLY a valid JSON array in this exact format:
+        [
+            {
+                "object": "object_name",
+                "description": "brief description",
+                "coordinates": [x1, y1, x2, y2]
+            },
+            ...
+        ]
+        
+        CRITICAL: Ensure coordinates are extremely accurate - objects like TV should have boxes that precisely match their actual position in the image.
+        """
+        
+        # Generate response from Gemini
+        response = model.generate_content([prompt, img])
+        response_text = response.text
+        
+        # Extract JSON data from the response
+        try:
+            # Parse the JSON response
+            # First, try to find a JSON array in the response
+            json_start = response_text.find('[')
+            json_end = response_text.rfind(']') + 1
+            
+            if json_start >= 0 and json_end > json_start:
+                json_str = response_text[json_start:json_end]
+                labels = json.loads(json_str)
+            else:
+                labels = json.loads(response_text)
+            
+            # Convert to BoundingBox objects
+            bounding_boxes = []
+            for item in labels:
+                if 'object' in item and 'coordinates' in item:
+                    try:
+                        # Extract coordinates and ensure they are within range 0-1
+                        coords = item['coordinates']
+                        
+                        # Validate coordinates
+                        if len(coords) != 4:
+                            continue  # Skip invalid coordinates
+                            
+                        # Convert coordinates to percentages if they're not already
+                        if any(c > 1.0 for c in coords):
+                            coords = [c/100 if c > 1.0 else c for c in coords]
+                        
+                        # Ensure coordinates are within bounds
+                        coords = [max(0.0, min(c, 1.0)) for c in coords]
+                        
+                        # Ensure x1 < x2 and y1 < y2
+                        x1, y1, x2, y2 = coords
+                        if x1 > x2:
+                            x1, x2 = x2, x1
+                        if y1 > y2:
+                            y1, y2 = y2, y1
+                        
+                        # Convert coordinates from 0-1 range to pixel coordinates
+                        img_width, img_height = img.size
+                        x1_px = int(x1 * img_width)
+                        y1_px = int(y1 * img_height)
+                        x2_px = int(x2 * img_width)
+                        y2_px = int(y2 * img_height)
+                        
+                        bounding_boxes.append(BoundingBox(
+                            box_2d=[x1_px, y1_px, x2_px, y2_px],
+                            label=item['object'].lower()  # Convert to lowercase
+                        ))
+                    except Exception as validation_error:
+                        print(f"Error validating bounding box: {validation_error}")
+                        # Skip this entry if it can't be validated
+            
+            return bounding_boxes
+            
+        except Exception as parsing_error:
+            print(f"Error parsing JSON response: {str(parsing_error)}")
+            print(f"Raw response: {response_text}")
+            
+            # Try with a more explicit follow-up prompt
+            try:
+                follow_up_prompt = """
+                Please reformat your previous response as a valid JSON array.
+                Each object should have:
+                - "object": the object name as a string
+                - "description": brief description as a string
+                - "coordinates": [x1, y1, x2, y2] with values between 0.0 and 1.0
+                
+                Example:
+                [
+                  {"object": "bed", "description": "queen size bed with white sheets", "coordinates": [0.1, 0.3, 0.7, 0.8]},
+                  {"object": "chair", "description": "wooden desk chair", "coordinates": [0.05, 0.1, 0.15, 0.25]}
+                ]
+                """
+                follow_up_response = model.generate_content(follow_up_prompt)
+                follow_up_text = follow_up_response.text.strip()
+                
+                # Extract JSON from the follow-up response
+                json_match = response_text.find('[')
+                json_end = response_text.rfind(']') + 1
+                
+                if json_match >= 0 and json_end > json_match:
+                    json_str = response_text[json_match:json_end]
+                    labels = json.loads(json_str)
+                else:
+                    labels = json.loads(follow_up_text)
+                
+                # Convert to BoundingBox objects
+                bounding_boxes = []
+                for item in labels:
+                    if 'object' in item and 'coordinates' in item:
+                        try:
+                            # Process coordinates as before
+                            coords = item['coordinates']
+                            # Convert to percentages if needed and ensure within bounds
+                            if any(c > 1.0 for c in coords):
+                                coords = [c/100 if c > 1.0 else c for c in coords]
+                            coords = [max(0.0, min(c, 1.0)) for c in coords]
+                            
+                            # Ensure x1 < x2 and y1 < y2
+                            x1, y1, x2, y2 = coords
+                            if x1 > x2:
+                                x1, x2 = x2, x1
+                            if y1 > y2:
+                                y1, y2 = y2, y1
+                            
+                            # Convert to pixel coordinates
+                            img_width, img_height = img.size
+                            x1_px = int(x1 * img_width)
+                            y1_px = int(y1 * img_height)
+                            x2_px = int(x2 * img_width)
+                            y2_px = int(y2 * img_height)
+                            
+                            bounding_boxes.append(BoundingBox(
+                                box_2d=[x1_px, y1_px, x2_px, y2_px],
+                                label=item['object'].lower()
+                            ))
+                        except:
+                            # Skip invalid entries
+                            pass
+                return bounding_boxes
+            except Exception as e:
+                print(f"Error in follow-up response: {str(e)}")
+                # Return empty list as last resort
+                return []
+            
+    except Exception as e:
+        print(f"Error in Gemini detection: {str(e)}")
+        return []
+
+# Improved function to draw labeled objects on image with matplotlib
+def plot_bounding_boxes(image, bounding_boxes):
+    """
+    Plots bounding boxes on an image with better styling from gemini_spatial.py
+    
+    Args:
+        image: The image to draw on (CV2 or PIL format)
+        bounding_boxes: A list of BoundingBox objects containing labels and coordinates
+    
+    Returns:
+        CV2 image with bounding boxes drawn
+    """
+    # Convert CV2 image to PIL if needed
+    if isinstance(image, np.ndarray):
+        pil_image = Image.fromarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
+    else:
+        pil_image = image
+        
+    # Convert PIL Image to numpy array for matplotlib
+    img_array = np.array(pil_image)
+    
+    # Create figure and axis
+    fig, ax = plt.subplots(figsize=(12, 10))
+    ax.imshow(img_array)
+    
+    # Use a consistent blue color for all objects
+    box_color = '#0066ff'  # Bright blue
+    
+    # Draw each object with its label
+    for i, bbox in enumerate(bounding_boxes):
+        # Get coordinates
+        x1, y1, x2, y2 = bbox.box_2d
+        
+        # Draw rectangle with blue color and no fill
+        rect = Rectangle((x1, y1), x2-x1, y2-y1, 
+                        linewidth=2, edgecolor=box_color, facecolor='none', alpha=0.8)
+        ax.add_patch(rect)
+        
+        # Add label with blue background at the top of the box
+        text_bg = dict(boxstyle="round,pad=0.3", fc=box_color, ec=box_color, alpha=0.8)
+        ax.text(x1, y1-5, bbox.label, color='white', fontweight='bold',
+               bbox=text_bg, fontsize=10, verticalalignment='bottom')
+    
+    # Remove axis ticks and frame
+    ax.set_xticks([])
+    ax.set_yticks([])
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.spines['bottom'].set_visible(False)
+    ax.spines['left'].set_visible(False)
+    
+    # Save the figure to a buffer with higher DPI
+    buf = io.BytesIO()
+    plt.tight_layout(pad=0)
+    fig.savefig(buf, format='png', dpi=150, bbox_inches='tight', pad_inches=0)
+    buf.seek(0)
+    plt.close(fig)
+    
+    # Convert back to cv2 format for our pipeline
+    processed_image = Image.open(buf)
+    return cv2.cvtColor(np.array(processed_image), cv2.COLOR_RGB2BGR)
 
 @csrf_exempt
 def process_image(request):
     if model is None:
         return JsonResponse({
             'success': False,
-            'error': 'Model not loaded. Please check server configuration.'
+            'error': 'Gemini model not loaded. Please check server configuration.'
         })
         
     if request.method == 'POST' and request.FILES.get('image'):
@@ -55,62 +351,26 @@ def process_image(request):
             image = cv2.imread(temp_path)
             original_image = image.copy()
             
-            # Run detection
-            results = model(
-                image,
-                conf=0.25,  # Lower confidence threshold for better detection
-                iou=0.45,   # IOU threshold
-                max_det=20  # Maximum detections per image
-            )
+            # Run detection with Gemini's spatial understanding
+            bounding_boxes = detect_objects_with_gemini(temp_path)
             
-            # Define colors for visualization
-            colors = {
-                'bed': (0, 255, 0),      # Green
-                'chair': (255, 0, 0),    # Blue
-                'tv': (0, 0, 255),       # Red
-                'couch': (128, 0, 128),  # Purple
-                'dining table': (255, 0, 255),  # Magenta
-                'laptop': (255, 165, 0),  # Orange
-                'remote': (128, 128, 0),  # Olive
-                'clock': (0, 128, 128),   # Teal
-                'book': (70, 130, 180),   # Steel Blue
-                'vase': (219, 112, 147)   # Pale Violet Red
-            }
-            
-            # Process detections
-            detections = []
-            if results[0].boxes is not None:
-                for box in results[0].boxes:
-                    # Get box coordinates
-                    x1, y1, x2, y2 = map(int, box.xyxy[0].cpu().numpy())
-                    conf = float(box.conf[0])
-                    cls_id = int(box.cls[0])
-                    class_name = model.names[cls_id]
-                    
-                    if class_name.lower() in colors:
-                        detections.append({
-                            'box': [x1, y1, x2, y2],
-                            'class': class_name,
-                            'confidence': conf
-                        })
-                        
-                        # Draw detection
-                        color = colors[class_name.lower()]
-                        label = f"{class_name} {conf:.2f}"
-                        
-                        # Draw box
-                        cv2.rectangle(original_image, (x1, y1), (x2, y2), color, 3)
-                        
-                        # Draw label
-                        (w, h), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.8, 2)
-                        cv2.rectangle(original_image, (x1, y1 - 35), (x1 + w + 10, y1), color, -1)
-                        cv2.putText(original_image, label, (x1 + 5, y1 - 10),
-                                  cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
+            # Use our new plotting function to draw bounding boxes
+            if bounding_boxes:
+                original_image = plot_bounding_boxes(original_image, bounding_boxes)
             
             # Convert final image to base64
             _, buffer = cv2.imencode('.jpg', original_image, [cv2.IMWRITE_JPEG_QUALITY, 95])
             img_str = base64.b64encode(buffer).decode()
             img_data = ContentFile(buffer)
+            
+            # Convert BoundingBox objects to dictionary form for database storage
+            detections = []
+            for bbox in bounding_boxes:
+                detections.append({
+                    'class': bbox.label,
+                    'box': bbox.box_2d,
+                    'confidence': 0.9  # Default high confidence
+                })
             
             # Save detection to database
             detection = Detection(
@@ -152,15 +412,19 @@ def process_image(request):
                         
                         checkin_objects = {}
                         for item in checkin_detection.get_detection_data():
-                            if item['class'] not in checkin_objects:
-                                checkin_objects[item['class']] = 0
-                            checkin_objects[item['class']] += 1
+                            if 'class' in item:
+                                class_name = item['class'].lower()
+                                if class_name not in checkin_objects:
+                                    checkin_objects[class_name] = 0
+                                checkin_objects[class_name] += 1
                         
                         checkout_objects = {}
                         for item in detections:
-                            if item['class'] not in checkout_objects:
-                                checkout_objects[item['class']] = 0
-                            checkout_objects[item['class']] += 1
+                            if 'class' in item:
+                                class_name = item['class'].lower()
+                                if class_name not in checkout_objects:
+                                    checkout_objects[class_name] = 0
+                                checkout_objects[class_name] += 1
                         
                         # Find missing objects
                         missing_objects = {}
@@ -172,16 +436,24 @@ def process_image(request):
                         # Update room activity with missing items
                         if missing_objects:
                             room_activity.has_missing_items = True
+                            # Ensure proper dictionary format
+                            print(f"SAVING MISSING ITEMS: {missing_objects}")
                             room_activity.missing_items_details = json.dumps(missing_objects)
                             room_activity.save()
+                            print(f"SAVED FORMAT: {room_activity.missing_items_details}")
                     except Detection.DoesNotExist:
                         pass
                     
                 except RoomActivity.DoesNotExist:
                     pass
             
-            # Clean up
-            os.remove(temp_path)
+            # Clean up - with error handling
+            try:
+                if os.path.exists(temp_path):
+                    os.remove(temp_path)
+            except Exception as e:
+                print(f"Warning: Could not remove temporary file {temp_path}: {str(e)}")
+                # Continue processing instead of failing
             
             return JsonResponse({
                 'success': True,
@@ -240,16 +512,20 @@ def compare_detections(request, session_id=None):
             # Create a dictionary of objects detected in checkin image
             checkin_objects = {}
             for item in checkin_data:
-                if item['class'] not in checkin_objects:
-                    checkin_objects[item['class']] = 0
-                checkin_objects[item['class']] += 1
+                if 'class' in item:
+                    class_name = item['class'].lower()
+                    if class_name not in checkin_objects:
+                        checkin_objects[class_name] = 0
+                    checkin_objects[class_name] += 1
                 
             # Create a dictionary of objects detected in checkout image
             checkout_objects = {}
             for item in checkout_data:
-                if item['class'] not in checkout_objects:
-                    checkout_objects[item['class']] = 0
-                checkout_objects[item['class']] += 1
+                if 'class' in item:
+                    class_name = item['class'].lower()
+                    if class_name not in checkout_objects:
+                        checkout_objects[class_name] = 0
+                    checkout_objects[class_name] += 1
                 
             # Find missing objects (in checkin but not in checkout)
             missing_objects = {}
@@ -276,8 +552,11 @@ def compare_detections(request, session_id=None):
                     # Update room activity with missing items
                     if missing_objects:
                         room_activity.has_missing_items = True
+                        # Ensure proper dictionary format
+                        print(f"SAVING MISSING ITEMS: {missing_objects}")
                         room_activity.missing_items_details = json.dumps(missing_objects)
                         room_activity.save()
+                        print(f"SAVED FORMAT: {room_activity.missing_items_details}")
                 except RoomActivity.DoesNotExist:
                     pass
     
