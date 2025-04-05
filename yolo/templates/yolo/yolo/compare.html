@@ -213,14 +213,16 @@
                     <tr>
                         <td>{{ object }}</td>
                         <td>{{ count }}</td>
-                        <td>{{ checkout_objects|get_item:object|default:"0" }}</td>
+                        {% with checkout_count=checkout_objects|get_item:object|default:"0" %}
+                        <td>{{ checkout_count }}</td>
                         <td>
-                            {% if checkout_objects|get_item:object|default:"0" < count %}
-                            <span style="color: red;">Missing ({{ count|subtract:checkout_objects|get_item:object|default:"0" }})</span>
+                            {% if checkout_count < count %}
+                            <div class="object-item missing-item">Missing ({{ count|subtract:checkout_count }})</div>
                             {% else %}
-                            <span style="color: green;">OK</span>
+                            <div class="object-item" style="background-color: #d4edda; color: #155724;">OK</div>
                             {% endif %}
                         </td>
+                        {% endwith %}
                     </tr>
                     {% endfor %}
                 </tbody>

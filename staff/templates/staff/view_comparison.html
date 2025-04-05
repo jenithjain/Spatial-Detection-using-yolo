@@ -214,7 +214,8 @@
                             <tr>
                                 <td>{{ object }}</td>
                                 <td>{{ count }}</td>
-                                <td>{{ checkout_objects|get_item:object|default:"0" }}</td>
+                                {% with checkout_count=checkout_objects|get_item:object|default:"0" %}
+                                <td>{{ checkout_count }}</td>
                                 <td>
                                     {% if checkout_objects|get_item:object|default:"0" < count %}
                                     <span class="badge bg-danger">Missing ({{ count|subtract:checkout_objects|get_item:object|default:"0" }})</span>
@@ -224,6 +225,7 @@
                                     <span class="badge bg-success">OK</span>
                                     {% endif %}
                                 </td>
+                                {% endwith %}
                             </tr>
                             {% endfor %}
                             
