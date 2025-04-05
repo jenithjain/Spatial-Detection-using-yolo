@@ -1,0 +1,238 @@
+<!-- Room Analysis Section -->
+<div class="card shadow mb-4">
+    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+        <h6 class="m-0 font-weight-bold text-primary">Room Analysis Dashboard</h6>
+    </div>
+    <div class="card-body">
+        {% if rooms_with_data %}
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover" id="roomAnalysisTable" width="100%" cellspacing="0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th>Room</th>
+                            <th>Check-ins</th>
+                            <th>Check-outs</th>
+                            <th>Missing Items</th>
+                            <th>Confidence Score</th>
+                            <th>Common Issues</th>
+                            <th>Damages</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for room_data in rooms_with_data %}
+                        <tr>
+                            <td><strong>{{ room_data.room.room_number }}</strong> ({{ room_data.room.room_type }})</td>
+                            <td>{{ room_data.total_checkins }}</td>
+                            <td>{{ room_data.total_checkouts }}</td>
+                            <td>
+                                {% if room_data.missing_items_count > 0 %}
+                                    <span class="badge bg-danger">
+                                        {{ room_data.missing_items_count }} ({{ room_data.missing_items_percentage|floatformat:1 }}%)
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-success">None</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if room_data.avg_confidence_score > 0 %}
+                                    <div class="progress">
+                                        {% if room_data.avg_confidence_score >= 80 %}
+                                            <div class="progress-bar bg-success" role="progressbar" style="width: {{ room_data.avg_confidence_score }}%">
+                                                {{ room_data.avg_confidence_score|floatformat:1 }}%
+                                            </div>
+                                        {% elif room_data.avg_confidence_score >= 50 %}
+                                            <div class="progress-bar bg-warning" role="progressbar" style="width: {{ room_data.avg_confidence_score }}%">
+                                                {{ room_data.avg_confidence_score|floatformat:1 }}%
+                                            </div>
+                                        {% else %}
+                                            <div class="progress-bar bg-danger" role="progressbar" style="width: {{ room_data.avg_confidence_score }}%">
+                                                {{ room_data.avg_confidence_score|floatformat:1 }}%
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                {% else %}
+                                    <span class="text-muted">No data</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if room_data.top_issues %}
+                                    <ul class="list-unstyled mb-0">
+                                        {% for issue, count in room_data.top_issues %}
+                                            <li><span class="badge bg-light text-dark">{{ issue }} ({{ count }})</span></li>
+                                        {% endfor %}
+                                    </ul>
+                                {% else %}
+                                    <span class="text-muted">None reported</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if room_data.top_damages %}
+                                    <ul class="list-unstyled mb-0">
+                                        {% for damage, count in room_data.top_damages %}
+                                            <li><span class="badge bg-light text-dark">{{ damage }} ({{ count }})</span></li>
+                                        {% endfor %}
+                                    </ul>
+                                {% else %}
+                                    <span class="text-muted">None detected</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#roomModal{{ room_data.room.id }}">
+                                    View Details
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Room Details Modals -->
+            {% for room_data in rooms_with_data %}
+            <div class="modal fade" id="roomModal{{ room_data.room.id }}" tabindex="-1" aria-labelledby="roomModalLabel{{ room_data.room.id }}" aria-hidden="true">
+                <div class="modal-dialog modal-xl">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="roomModalLabel{{ room_data.room.id }}">
+                                Room {{ room_data.room.room_number }} - Detailed Analysis
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="row">
+                                <!-- Inventory Section -->
+                                <div class="col-md-6">
+                                    <div class="card mb-4">
+                                        <div class="card-header">
+                                            <h6 class="m-0 font-weight-bold">Room Inventory</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            {% if room_data.inventory %}
+                                            <div class="table-responsive">
+                                                <table class="table table-sm">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Item</th>
+                                                            <th>Quantity</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {% for item in room_data.inventory %}
+                                                        <tr>
+                                                            <td>{{ item.item_name }}</td>
+                                                            <td>{{ item.quantity }}</td>
+                                                        </tr>
+                                                        {% endfor %}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                            {% else %}
+                                            <p class="text-muted">No inventory items recorded for this room.</p>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Latest Analysis Section -->
+                                <div class="col-md-6">
+                                    <div class="card mb-4">
+                                        <div class="card-header">
+                                            <h6 class="m-0 font-weight-bold">Latest Analysis</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            {% if room_data.latest_analysis %}
+                                                <p><strong>Date:</strong> {{ room_data.latest_analysis.created_at|date:"F j, Y, g:i a" }}</p>
+                                                <p><strong>Status:</strong> {{ room_data.latest_analysis.status|title }}</p>
+                                                <p><strong>Confidence Score:</strong> {{ room_data.latest_analysis.confidence_score|floatformat:1 }}%</p>
+                                                
+                                                {% if room_data.latest_analysis.simple_summary %}
+                                                    <div class="alert alert-info">
+                                                        <h6 class="font-weight-bold">Summary:</h6>
+                                                        <p class="mb-0">{{ room_data.latest_analysis.simple_summary|linebreaks }}</p>
+                                                    </div>
+                                                {% endif %}
+                                                
+                                                {% if room_data.latest_analysis.checkout_image %}
+                                                    <div class="text-center">
+                                                        <img src="{{ room_data.latest_analysis.checkout_image.url }}" class="img-fluid" alt="Latest checkout image" style="max-height: 200px;">
+                                                    </div>
+                                                {% endif %}
+                                            {% else %}
+                                                <p class="text-muted">No analysis available for this room.</p>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Recent Activities Section -->
+                                <div class="col-md-12">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h6 class="m-0 font-weight-bold">Recent Activities</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            {% if room_data.activities %}
+                                            <div class="table-responsive">
+                                                <table class="table table-sm">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Date</th>
+                                                            <th>Staff Member</th>
+                                                            <th>Status</th>
+                                                            <th>Missing Items</th>
+                                                            <th>Action</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {% for activity in room_data.activities %}
+                                                        <tr>
+                                                            <td>{{ activity.check_in_time|date:"M d, Y" }}</td>
+                                                            <td>{{ activity.staff_member.user.get_full_name }}</td>
+                                                            <td>
+                                                                {% if activity.status == 'active' %}
+                                                                    <span class="badge bg-primary">Active</span>
+                                                                {% else %}
+                                                                    <span class="badge bg-success">Completed</span>
+                                                                {% endif %}
+                                                            </td>
+                                                            <td>
+                                                                {% if activity.has_missing_items %}
+                                                                    <span class="badge bg-danger">Yes</span>
+                                                                {% else %}
+                                                                    <span class="badge bg-success">No</span>
+                                                                {% endif %}
+                                                            </td>
+                                                            <td>
+                                                                <a href="{% url 'staff:view_comparison' activity.id %}" class="btn btn-sm btn-outline-primary" target="_blank">
+                                                                    View Details
+                                                                </a>
+                                                            </td>
+                                                        </tr>
+                                                        {% endfor %}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                            {% else %}
+                                            <p class="text-muted">No activities recorded for this room.</p>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+            
+        {% else %}
+        <div class="alert alert-info">
+            <p class="mb-0">No rooms have been set up yet. Please add rooms to view analysis data.</p>
+        </div>
+        {% endif %}
+    </div>
+</div> 

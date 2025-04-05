@@ -4,11 +4,11 @@
 {% block title %}Manager Dashboard{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
+<div class="container-fluid mt-4">
     <div class="row">
         <div class="col-md-12">
-            <div class="card shadow">
-                <div class="card-header">
+            <div class="card shadow mb-4">
+                <div class="card-header bg-primary text-white">
                     <h3 class="card-title mb-0">Welcome, {{ manager.organization_name }}</h3>
                 </div>
                 <div class="card-body">
@@ -25,87 +25,177 @@
                             </a>
                         </div>
                     </div>
-
-                    <!-- Hotel Room Inventory Section -->
+                    
+                    <!-- Analytics Overview Cards -->
                     <div class="row mb-4">
-                        <div class="col-md-12">
-                            <div class="card">
-                                <div class="card-header d-flex justify-content-between align-items-center">
-                                    <h4 class="mb-0">Hotel Room Inventory</h4>
-                                </div>
+                        <div class="col-xl-3 col-md-6 mb-4">
+                            <div class="card border-left-primary shadow h-100 py-2">
                                 <div class="card-body">
-                                    {% if rooms_with_inventory %}
-                                    <div class="row">
-                                        {% for room_data in rooms_with_inventory %}
-                                        <div class="col-md-6 mb-4">
-                                            <div class="card">
-                                                <div class="card-header bg-light">
-                                                    <h5 class="mb-0">Room {{ room_data.room.room_number }} - {{ room_data.room.room_type }}</h5>
-                                                </div>
-                                                <div class="card-body">
-                                                    {% if room_data.inventory %}
-                                                    <ul class="list-group list-group-flush">
-                                                        {% for item in room_data.inventory %}
-                                                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                                                            {{ item.item_name }}
-                                                            <span class="badge bg-primary rounded-pill">{{ item.quantity }}</span>
-                                                        </li>
-                                                        {% endfor %}
-                                                    </ul>
-                                                    {% else %}
-                                                    <p class="text-muted">No inventory items recorded for this room.</p>
-                                                    {% endif %}
-                                                </div>
-                                            </div>
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                                Total Rooms</div>
+                                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_rooms }}</div>
                                         </div>
-                                        {% endfor %}
+                                        <div class="col-auto">
+                                            <i class="fas fa-door-open fa-2x text-gray-300"></i>
+                                        </div>
                                     </div>
-                                    {% else %}
-                                    <div class="alert alert-info">
-                                        <p class="mb-0">No rooms have been set up yet. Please add rooms and their inventory items.</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-xl-3 col-md-6 mb-4">
+                            <div class="card border-left-success shadow h-100 py-2">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                                Total Activities</div>
+                                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_activities }}</div>
+                                        </div>
+                                        <div class="col-auto">
+                                            <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
+                                        </div>
                                     </div>
-                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-xl-3 col-md-6 mb-4">
+                            <div class="card border-left-warning shadow h-100 py-2">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                                Total Missing Items</div>
+                                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_missing_items }}</div>
+                                        </div>
+                                        <div class="col-auto">
+                                            <i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-xl-3 col-md-6 mb-4">
+                            <div class="card border-left-info shadow h-100 py-2">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                                Staff Members</div>
+                                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ staff_members.count }}</div>
+                                        </div>
+                                        <div class="col-auto">
+                                            <i class="fas fa-users fa-2x text-gray-300"></i>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <!-- End Hotel Room Inventory Section -->
-
-                    <h4>Staff Members</h4>
-                    {% if staff_members %}
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Name</th>
-                                    <th>Email</th>
-                                    <th>Phone</th>
-                                    <th>Role</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for staff in staff_members %}
-                                <tr>
-                                    <td>{{ staff.user.get_full_name }}</td>
-                                    <td>{{ staff.user.email }}</td>
-                                    <td>{{ staff.phone_number }}</td>
-                                    <td>{{ staff.role }}</td>
-                                    <td>
-                                        <a href="#" class="btn btn-sm btn-info">Edit</a>
-                                        <a href="#" class="btn btn-sm btn-danger">Delete</a>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+                    
+                    <!-- Navigation Links to Detailed Pages -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="card shadow border-left-dark">
+                                <div class="card-body py-3">
+                                    <div class="d-flex justify-content-around align-items-center">
+                                        <a href="{% url 'manager:inventory' %}" class="btn btn-lg btn-outline-primary">
+                                            <i class="fas fa-clipboard-list mr-2"></i> View Full Inventory
+                                        </a>
+                                        <div class="vr mx-4 d-none d-md-block" style="height: 40px;"></div>
+                                        <a href="{% url 'manager:analysis' %}" class="btn btn-lg btn-outline-success">
+                                            <i class="fas fa-chart-bar mr-2"></i> View Full Analysis
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    {% else %}
-                    <p class="text-muted">No staff members registered yet.</p>
-                    {% endif %}
+
+                    <!-- Include Room Inventory Template -->
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                            <h6 class="m-0 font-weight-bold text-primary">Room Inventory Overview</h6>
+                            <a href="{% url 'manager:inventory' %}" class="btn btn-sm btn-primary">
+                                View Full Inventory
+                            </a>
+                        </div>
+                        <div class="card-body">
+                            {% include 'admin/inventory.html' %}
+                        </div>
+                    </div>
+
+                    <!-- Include Room Analysis Template -->
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                            <h6 class="m-0 font-weight-bold text-primary">Room Analysis Dashboard</h6>
+                            <a href="{% url 'manager:analysis' %}" class="btn btn-sm btn-primary">
+                                View Full Analysis
+                            </a>
+                        </div>
+                        <div class="card-body">
+                            {% include 'admin/analysis.html' %}
+                        </div>
+                    </div>
+
+                    <!-- Staff Members Section -->
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">Staff Members</h6>
+                        </div>
+                        <div class="card-body">
+                            {% if staff_members %}
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-hover">
+                                    <thead class="bg-light">
+                                        <tr>
+                                            <th>Name</th>
+                                            <th>Email</th>
+                                            <th>Phone</th>
+                                            <th>Role</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for staff in staff_members %}
+                                        <tr>
+                                            <td>{{ staff.user.get_full_name }}</td>
+                                            <td>{{ staff.user.email }}</td>
+                                            <td>{{ staff.phone_number }}</td>
+                                            <td>{{ staff.role }}</td>
+                                            <td>
+                                                <a href="#" class="btn btn-sm btn-info">Edit</a>
+                                                <a href="#" class="btn btn-sm btn-danger">Delete</a>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <p class="text-muted">No staff members registered yet.</p>
+                            {% endif %}
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<!-- Page level scripts -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize any data tables
+        if (typeof($.fn.DataTable) !== 'undefined') {
+            $('#roomAnalysisTable').DataTable({
+                "order": [[1, "desc"]]
+            });
+        }
+    });
+</script>
 {% endblock %} 
