@@ -1,53 +1,113 @@
-{% extends 'base.html' %}
+{% extends 'staff/base.html' %}
 {% load static %}
 
 {% block title %}Staff Dashboard{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
-    <div class="row">
-        <div class="col-md-12">
-            <div class="card shadow">
-                <div class="card-header">
-                    <h3 class="card-title mb-0">Welcome, {{ staff_member.user.get_full_name }}</h3>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <h4>Personal Details</h4>
-                            <p><strong>Name:</strong> {{ staff_member.user.get_full_name }}</p>
-                            <p><strong>Email:</strong> {{ staff_member.user.email }}</p>
-                            <p><strong>Phone:</strong> {{ staff_member.phone_number }}</p>
-                            <p><strong>Role:</strong> {{ staff_member.role }}</p>
-                        </div>
-                        <div class="col-md-6">
-                            <h4>Organization Details</h4>
-                            <p><strong>Organization:</strong> {{ staff_member.manager.organization_name }}</p>
-                            <p><strong>Manager:</strong> {{ staff_member.manager.user.get_full_name }}</p>
-                        </div>
-                    </div>
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1>Staff Dashboard</h1>
+            <p class="lead">Welcome, {{ staff_member.user.get_full_name }}</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'staff:room_check_in' %}" class="btn btn-primary">
+                <i class="fas fa-door-open"></i> New Room Check-In
+            </a>
+        </div>
+    </div>
 
-                    <div class="row mt-4">
-                        <div class="col-md-12">
-                            <h4>Tools</h4>
-                            <div class="list-group">
-                                <a href="{% url 'yolo:upload' %}" class="list-group-item list-group-item-action">
-                                    <i class="fas fa-camera"></i> Room Object Detection
+    <!-- Active Room Activities -->
+    <div class="card shadow mb-4">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Active Rooms</h5>
+        </div>
+        <div class="card-body">
+            {% if active_rooms %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Room</th>
+                            <th>Check-In Time</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for room in active_rooms %}
+                        <tr>
+                            <td>{{ room.room_number }}</td>
+                            <td>{{ room.check_in_time }}</td>
+                            <td>
+                                <span class="badge bg-success">Active</span>
+                            </td>
+                            <td>
+                                <a href="{% url 'staff:room_check_out' room.id %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-door-closed"></i> Check-Out
                                 </a>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="row mt-4">
-                        <div class="col-md-12">
-                            <h4>Recent Activity</h4>
-                            <div class="alert alert-info">
-                                <p class="mb-0">No recent activity to display.</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
+            {% else %}
+            <div class="alert alert-info">
+                <p class="mb-0">No active rooms. Start a new room check-in using the button above.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Recent Completed Activities -->
+    <div class="card shadow">
+        <div class="card-header bg-secondary text-white">
+            <h5 class="mb-0">Recent Check-Outs</h5>
+        </div>
+        <div class="card-body">
+            {% if completed_rooms %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Room</th>
+                            <th>Check-Out Time</th>
+                            <th>Status</th>
+                            <th>Missing Items</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for room in completed_rooms %}
+                        <tr>
+                            <td>{{ room.room_number }}</td>
+                            <td>{{ room.check_out_time }}</td>
+                            <td>
+                                <span class="badge bg-secondary">Completed</span>
+                            </td>
+                            <td>
+                                {% if room.has_missing_items %}
+                                <span class="badge bg-danger">Yes</span>
+                                {% else %}
+                                <span class="badge bg-success">No</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'staff:view_comparison' room.id %}" class="btn btn-sm btn-outline-info">
+                                    <i class="fas fa-search"></i> View Details
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                <p class="mb-0">No recent check-outs.</p>
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>

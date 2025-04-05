@@ -1,0 +1,38 @@
+{% extends 'staff/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">Room Check-In</h4>
+        </div>
+        <div class="card-body">
+            <p class="lead">Enter room details to start the check-in process. You'll be prompted to upload a photo after submitting this form.</p>
+            
+            <form method="post" class="mt-4">
+                {% csrf_token %}
+                
+                <div class="form-group mb-3">
+                    <label for="{{ form.room_number.id_for_label }}" class="form-label">Room Number</label>
+                    {{ form.room_number }}
+                </div>
+                
+                <div class="form-group mb-3">
+                    <label for="{{ form.notes.id_for_label }}" class="form-label">Notes</label>
+                    {{ form.notes }}
+                    <div class="form-text">Optional: Add any notes about the room's condition.</div>
+                </div>
+                
+                <div class="d-flex justify-content-between mt-4">
+                    <a href="{% url 'staff:dashboard' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Dashboard
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-arrow-right"></i> Continue to Photo Upload
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %} 

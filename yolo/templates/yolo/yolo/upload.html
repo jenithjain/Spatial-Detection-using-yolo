@@ -4,92 +4,179 @@
 {% block title %}Room Object Detection{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="row">
-        <div class="col-md-12">
-            <div class="card shadow">
-                <div class="card-header">
-                    <h3 class="card-title mb-0">Room Object Detection</h3>
-                </div>
-                <div class="card-body">
-                    <div class="upload-form">
-                        <form id="uploadForm" class="mb-4">
-                            <div class="form-group">
-                                <label for="imageInput" class="form-label">Select Room Image</label>
-                                <input type="file" class="form-control" id="imageInput" accept="image/*" required>
-                            </div>
-                            <button type="submit" class="btn btn-primary mt-3">
-                                <i class="fas fa-camera"></i> Process Image
-                            </button>
-                        </form>
-                    </div>
-
-                    <div class="loading text-center" id="loading">
-                        <div class="spinner-border text-primary" role="status">
-                            <span class="visually-hidden">Loading...</span>
-                        </div>
-                        <p class="mt-2">Processing image... Please wait...</p>
-                    </div>
-
-                    <div class="result-container">
-                        <h4 class="mb-3">Detection Results</h4>
-                        <img id="resultImage" class="img-fluid rounded shadow-sm" style="display: none;">
-                    </div>
-                </div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Room Object Detection</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .upload-form {
+            margin-bottom: 20px;
+        }
+        .result-container {
+            margin-top: 20px;
+            text-align: center;
+        }
+        #resultImage {
+            max-width: 100%;
+            margin-top: 20px;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .loading {
+            display: none;
+            margin: 20px 0;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .nav-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .compare-btn {
+            background-color: #17a2b8;
+        }
+        .detection-info {
+            background-color: #f9f9f9;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Room Object Detection</h1>
+        <div class="upload-form">
+            <form id="uploadForm">
+                <input type="file" id="imageInput" accept="image/*" required>
+                <button type="submit">Process Image</button>
+            </form>
+        </div>
+        <div class="loading" id="loading">
+            Processing image... Please wait...
+        </div>
+        <div class="result-container">
+            <h2>Detection Results</h2>
+            <img id="resultImage" style="display: none;">
+            <div id="detectionInfo" class="detection-info">
+                <h3>Detected Objects</h3>
+                <div id="detectedObjectsList"></div>
             </div>
         </div>
+        
+        <div class="nav-buttons">
+            <a id="compareLink" style="display: none;">
+                <button class="compare-btn">Go to Comparison Page</button>
+            </a>
+        </div>
     </div>
-</div>
 
-<style>
-    .loading {
-        display: none;
-        margin: 20px 0;
-    }
-    #resultImage {
-        max-width: 100%;
-        height: auto;
-    }
-</style>
-
-<script>
-    document.getElementById('uploadForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
+    <script>
+        let currentSessionId = null;
         
-        const imageInput = document.getElementById('imageInput');
-        const loading = document.getElementById('loading');
-        const resultImage = document.getElementById('resultImage');
-        
-        if (!imageInput.files[0]) {
-            alert('Please select an image first');
-            return;
-        }
-
-        const formData = new FormData();
-        formData.append('image', imageInput.files[0]);
-
-        loading.style.display = 'block';
-        resultImage.style.display = 'none';
-
-        try {
-            const response = await fetch('{% url "yolo:process_image" %}', {
-                method: 'POST',
-                body: formData
-            });
-
-            const data = await response.json();
+        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
             
-            if (data.success) {
-                resultImage.src = 'data:image/jpeg;base64,' + data.image;
-                resultImage.style.display = 'block';
-            } else {
-                alert('Error processing image: ' + data.error);
+            const imageInput = document.getElementById('imageInput');
+            const loading = document.getElementById('loading');
+            const resultImage = document.getElementById('resultImage');
+            const detectionInfo = document.getElementById('detectionInfo');
+            const detectedObjectsList = document.getElementById('detectedObjectsList');
+            const compareLink = document.getElementById('compareLink');
+            
+            if (!imageInput.files[0]) {
+                alert('Please select an image first');
+                return;
             }
-        } catch (error) {
-            alert('Error processing image: ' + error.message);
-        } finally {
-            loading.style.display = 'none';
-        }
-    });
-</script>
+
+            const formData = new FormData();
+            formData.append('image', imageInput.files[0]);
+            formData.append('detection_type', 'shelf'); // Default to shelf images
+            
+            // If we already have a session ID, use it
+            if (currentSessionId) {
+                formData.append('session_id', currentSessionId);
+            }
+
+            loading.style.display = 'block';
+            resultImage.style.display = 'none';
+            detectionInfo.style.display = 'none';
+
+            try {
+                const response = await fetch('/yolo/process-image/', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultImage.src = 'data:image/jpeg;base64,' + data.image;
+                    resultImage.style.display = 'block';
+                    
+                    // Save the session ID for future uploads
+                    currentSessionId = data.session_id;
+                    
+                    // Update the compare link
+                    compareLink.href = `/yolo/compare/${currentSessionId}/`;
+                    compareLink.style.display = 'inline-block';
+                    
+                    // Display detected objects
+                    if (data.detections && data.detections.length > 0) {
+                        detectionInfo.style.display = 'block';
+                        
+                        // Count objects by class
+                        const objectCounts = {};
+                        data.detections.forEach(detection => {
+                            const className = detection.class;
+                            objectCounts[className] = (objectCounts[className] || 0) + 1;
+                        });
+                        
+                        // Display object counts
+                        detectedObjectsList.innerHTML = '';
+                        for (const [object, count] of Object.entries(objectCounts)) {
+                            const objectItem = document.createElement('div');
+                            objectItem.textContent = `${object}: ${count}`;
+                            objectItem.style.margin = '5px 0';
+                            detectedObjectsList.appendChild(objectItem);
+                        }
+                    }
+                } else {
+                    alert('Error processing image: ' + data.error);
+                }
+            } catch (error) {
+                alert('Error processing image: ' + error.message);
+            } finally {
+                loading.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
 {% endblock %} 

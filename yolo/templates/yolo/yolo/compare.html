@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+{% load yolo_extras %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compare Check-in vs Check-out</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .comparison-header {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .image-container {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .image-box {
+            width: 48%;
+            margin-bottom: 20px;
+            text-align: center;
+            background-color: #f9f9f9;
+            padding: 10px;
+            border-radius: 8px;
+        }
+        .detection-image {
+            max-width: 100%;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .upload-form {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #f0f0f0;
+            border-radius: 8px;
+        }
+        .result-section {
+            margin-top: 20px;
+        }
+        .missing-objects {
+            color: #d9534f;
+            font-weight: bold;
+        }
+        .object-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .object-item {
+            background-color: #f0f0f0;
+            border-radius: 4px;
+            padding: 5px 10px;
+        }
+        .missing-item {
+            background-color: #ffeeee;
+            border: 1px solid #d9534f;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .loading {
+            display: none;
+            margin: 20px 0;
+        }
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .comparison-table th, .comparison-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        .comparison-table th {
+            background-color: #f2f2f2;
+        }
+        .alert-success {
+            color: #155724;
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+            padding: 15px;
+            margin-bottom: 20px;
+            border: 1px solid transparent;
+            border-radius: 4px;
+        }
+        .alert-danger {
+            color: #721c24;
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+            padding: 15px;
+            margin-bottom: 20px;
+            border: 1px solid transparent;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="comparison-header">
+            <h1>Compare Check-in vs Check-out</h1>
+            <p>Upload check-in image and check-out image to compare detected objects</p>
+        </div>
+
+        {% if not session_id %}
+        <div class="upload-form">
+            <h2>Start New Comparison</h2>
+            <p>First, upload a check-in image to begin:</p>
+            <form id="uploadForm" action="{% url 'yolo:process_image' %}" method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <input type="hidden" name="detection_type" value="checkin">
+                <input type="file" id="imageInput" name="image" accept="image/*" required>
+                <button type="submit">Upload Check-in Image</button>
+            </form>
+        </div>
+        {% else %}
+        
+        <div class="image-container">
+            {% if has_checkin %}
+            <div class="image-box">
+                <h2>Check-in Image</h2>
+                <img src="{{ checkin_detection.processed_image.url }}" alt="Check-in Image" class="detection-image">
+            </div>
+            {% else %}
+            <div class="image-box">
+                <h2>Upload Check-in Image</h2>
+                <form id="checkinForm" action="{% url 'yolo:process_image' %}" method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <input type="hidden" name="detection_type" value="checkin">
+                    <input type="hidden" name="session_id" value="{{ session_id }}">
+                    <input type="file" name="image" accept="image/*" required>
+                    <button type="submit">Upload</button>
+                </form>
+            </div>
+            {% endif %}
+
+            {% if has_checkout %}
+            <div class="image-box">
+                <h2>Check-out Image</h2>
+                <img src="{{ checkout_detection.processed_image.url }}" alt="Check-out Image" class="detection-image">
+            </div>
+            {% else %}
+            <div class="image-box">
+                <h2>Upload Check-out Image</h2>
+                <form id="checkoutForm" action="{% url 'yolo:process_image' %}" method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <input type="hidden" name="detection_type" value="checkout">
+                    <input type="hidden" name="session_id" value="{{ session_id }}">
+                    <input type="file" name="image" accept="image/*" required>
+                    <button type="submit">Upload</button>
+                </form>
+            </div>
+            {% endif %}
+        </div>
+
+        {% if has_checkin and has_checkout %}
+        <div class="result-section">
+            <h2>Comparison Results</h2>
+            
+            {% if missing_objects %}
+            <div class="alert-danger">
+                <h3 class="missing-objects">Missing Items Detected!</h3>
+                <p>The following items were detected on check-in but not at check-out:</p>
+                <div class="object-list">
+                    {% for object, count in missing_objects.items %}
+                    <div class="object-item missing-item">{{ object }} ({{ count }})</div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% else %}
+            <div class="alert-success">
+                <h3>No Missing Items!</h3>
+                <p>All items detected during check-in were also detected during check-out.</p>
+            </div>
+            {% endif %}
+
+            <h3>Detailed Object Count</h3>
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>Object</th>
+                        <th>Check-in Count</th>
+                        <th>Check-out Count</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for object, count in checkin_objects.items %}
+                    <tr>
+                        <td>{{ object }}</td>
+                        <td>{{ count }}</td>
+                        <td>{{ checkout_objects|get_item:object|default:"0" }}</td>
+                        <td>
+                            {% if checkout_objects|get_item:object|default:"0" < count %}
+                            <span style="color: red;">Missing ({{ count|subtract:checkout_objects|get_item:object|default:"0" }})</span>
+                            {% else %}
+                            <span style="color: green;">OK</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+        
+        {% endif %}
+
+        <div style="margin-top: 20px;">
+            <a href="{% url 'yolo:upload' %}">
+                <button type="button" style="background-color: #6c757d;">Back to Upload</button>
+            </a>
+            {% if session_id %}
+            <a href="{% url 'yolo:compare' %}">
+                <button type="button" style="background-color: #17a2b8;">Start New Comparison</button>
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        // Handle form submissions via AJAX instead of page reload
+        document.addEventListener('DOMContentLoaded', function() {
+            // We'll use regular form submission for simplicity
+            // But you could enhance this with AJAX if needed
+        });
+    </script>
+</body>
+</html> 

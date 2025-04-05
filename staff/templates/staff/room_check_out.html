@@ -1,0 +1,42 @@
+{% extends 'staff/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">Room Check-Out - Room {{ room_activity.room_number }}</h4>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-info">
+                <h5 class="alert-heading">Room Details</h5>
+                <p><strong>Room:</strong> {{ room_activity.room_number }}</p>
+                <p><strong>Check-In Time:</strong> {{ room_activity.check_in_time }}</p>
+                {% if room_activity.notes %}
+                <p><strong>Notes:</strong> {{ room_activity.notes }}</p>
+                {% endif %}
+            </div>
+            
+            <p class="lead">Complete the check-out process for this room. You'll be prompted to upload a photo for comparison after submitting this form.</p>
+            
+            <form method="post" class="mt-4">
+                {% csrf_token %}
+                
+                <div class="form-group mb-3">
+                    <label for="{{ form.notes.id_for_label }}" class="form-label">Check-Out Notes</label>
+                    {{ form.notes }}
+                    <div class="form-text">Optional: Add any notes about the room's condition at check-out.</div>
+                </div>
+                
+                <div class="d-flex justify-content-between mt-4">
+                    <a href="{% url 'staff:dashboard' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Dashboard
+                    </a>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-check"></i> Complete Check-Out & Continue to Photo Upload
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %} 

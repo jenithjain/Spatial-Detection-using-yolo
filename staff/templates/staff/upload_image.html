@@ -1,0 +1,168 @@
+{% extends 'staff/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">
+                {% if detection_type == 'checkin' %}
+                Upload Check-In Image - Room {{ room_number }}
+                {% else %}
+                Upload Check-Out Image - Room {{ room_number }}
+                {% endif %}
+            </h4>
+        </div>
+        <div class="card-body">
+            <p class="lead">
+                {% if detection_type == 'checkin' %}
+                Please take a photo of the room during check-in. Our system will analyze the image to detect furniture and objects in the room.
+                {% else %}
+                Please take a photo of the room during check-out. Our system will compare this image with the check-in image to verify all items are present.
+                {% endif %}
+            </p>
+
+            <div id="uploadSection" class="mt-4">
+                <form id="uploadForm" class="mb-4">
+                    <input type="hidden" id="sessionId" value="{{ session_id }}">
+                    <input type="hidden" id="detectionType" value="{{ detection_type }}">
+                    <input type="hidden" id="roomNumber" value="{{ room_number }}">
+                    <input type="hidden" id="staffMemberId" value="{{ staff_member.id }}">
+                    
+                    <div class="form-group">
+                        <label for="imageInput" class="form-label">Select Image</label>
+                        <input type="file" class="form-control" id="imageInput" accept="image/*" required>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary mt-3">
+                        <i class="fas fa-upload"></i> Upload Image
+                    </button>
+                </form>
+            </div>
+
+            <div id="loadingSection" style="display: none;" class="text-center my-4">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2">Processing image, please wait...</p>
+            </div>
+
+            <div id="resultSection" style="display: none;" class="mt-4">
+                <h4 class="mb-3">Processing Results</h4>
+                <div class="text-center">
+                    <img id="resultImage" class="img-fluid rounded border" style="max-height: 400px;">
+                </div>
+                
+                <div id="detectionDetails" class="mt-3">
+                    <h5>Detected Objects:</h5>
+                    <div id="objectList" class="d-flex flex-wrap gap-2">
+                        <!-- Objects will be listed here -->
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between mt-4">
+                    {% if detection_type == 'checkin' %}
+                    <a href="{% url 'staff:dashboard' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Dashboard
+                    </a>
+                    <a id="continueBtn" href="{% url 'staff:dashboard' %}" class="btn btn-success">
+                        <i class="fas fa-check"></i> Complete Check-In
+                    </a>
+                    {% else %}
+                    <a href="{% url 'staff:dashboard' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Dashboard
+                    </a>
+                    <a id="compareBtn" href="#" class="btn btn-primary">
+                        <i class="fas fa-sync-alt"></i> View Comparison
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const uploadForm = document.getElementById('uploadForm');
+    const uploadSection = document.getElementById('uploadSection');
+    const loadingSection = document.getElementById('loadingSection');
+    const resultSection = document.getElementById('resultSection');
+    const resultImage = document.getElementById('resultImage');
+    const objectList = document.getElementById('objectList');
+    const compareBtn = document.getElementById('compareBtn');
+    
+    uploadForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const sessionId = document.getElementById('sessionId').value;
+        const detectionType = document.getElementById('detectionType').value;
+        const roomNumber = document.getElementById('roomNumber').value;
+        const staffMemberId = document.getElementById('staffMemberId').value;
+        const imageInput = document.getElementById('imageInput');
+        
+        if (!imageInput.files[0]) {
+            alert('Please select an image first');
+            return;
+        }
+        
+        // Show loading state
+        uploadSection.style.display = 'none';
+        loadingSection.style.display = 'block';
+        
+        const formData = new FormData();
+        formData.append('image', imageInput.files[0]);
+        formData.append('detection_type', detectionType);
+        formData.append('session_id', sessionId);
+        formData.append('room_number', roomNumber);
+        formData.append('staff_member_id', staffMemberId);
+        
+        try {
+            const response = await fetch('/yolo/process-image/', {
+                method: 'POST',
+                body: formData
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                // Display the processed image
+                resultImage.src = 'data:image/jpeg;base64,' + data.image;
+                
+                // Display detected objects
+                objectList.innerHTML = '';
+                const objectCounts = {};
+                
+                data.detections.forEach(detection => {
+                    const className = detection.class;
+                    objectCounts[className] = (objectCounts[className] || 0) + 1;
+                });
+                
+                for (const [object, count] of Object.entries(objectCounts)) {
+                    const objectBadge = document.createElement('span');
+                    objectBadge.className = 'badge bg-info text-dark p-2';
+                    objectBadge.textContent = `${object}: ${count}`;
+                    objectList.appendChild(objectBadge);
+                }
+                
+                // Setup continue button
+                if (detectionType === 'checkout' && compareBtn) {
+                    compareBtn.href = `/staff/room/comparison/${encodeURIComponent('{{ room_activity.id }}')}`;
+                }
+                
+                // Show results
+                loadingSection.style.display = 'none';
+                resultSection.style.display = 'block';
+            } else {
+                alert('Error processing image: ' + data.error);
+                loadingSection.style.display = 'none';
+                uploadSection.style.display = 'block';
+            }
+        } catch (error) {
+            alert('Error: ' + error.message);
+            loadingSection.style.display = 'none';
+            uploadSection.style.display = 'block';
+        }
+    });
+});
+</script>
+{% endblock %} 

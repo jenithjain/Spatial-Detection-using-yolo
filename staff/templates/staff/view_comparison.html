@@ -1,0 +1,166 @@
+{% extends 'staff/base.html' %}
+{% load static %}
+{% load staff_extras %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">Room Comparison - Room {{ room_activity.room_number }}</h4>
+        </div>
+        <div class="card-body">
+            <div class="alert {% if room_activity.has_missing_items %}alert-danger{% else %}alert-success{% endif %}">
+                <h5 class="alert-heading">
+                    {% if room_activity.has_missing_items %}
+                    <i class="fas fa-exclamation-triangle"></i> Missing Items Detected!
+                    {% else %}
+                    <i class="fas fa-check-circle"></i> All Items Accounted For
+                    {% endif %}
+                </h5>
+                
+                {% if room_activity.has_missing_items %}
+                <p>Our system has detected items that were present during check-in but are missing or misplaced during check-out.</p>
+                {% else %}
+                <p>All items detected during check-in were also detected during check-out. No missing items found.</p>
+                {% endif %}
+            </div>
+            
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">Check-In Image</h5>
+                            <small class="text-muted">{{ room_activity.check_in_time }}</small>
+                        </div>
+                        <div class="card-body text-center">
+                            {% if checkin_detection %}
+                            <img src="{{ checkin_detection.processed_image.url }}" alt="Check-in Image" class="img-fluid rounded">
+                            {% else %}
+                            <div class="alert alert-warning">Check-in image not available</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">Check-Out Image</h5>
+                            <small class="text-muted">{{ room_activity.check_out_time }}</small>
+                        </div>
+                        <div class="card-body text-center">
+                            {% if checkout_detection %}
+                            <img src="{{ checkout_detection.processed_image.url }}" alt="Check-out Image" class="img-fluid rounded">
+                            {% else %}
+                            <div class="alert alert-warning">Check-out image not available</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-4">
+                <h5>
+                    Room Details
+                </h5>
+                <ul class="list-group mb-3">
+                    <li class="list-group-item"><strong>Room Number:</strong> {{ room_activity.room_number }}</li>
+                    <li class="list-group-item"><strong>Check-In Time:</strong> {{ room_activity.check_in_time }}</li>
+                    <li class="list-group-item"><strong>Check-Out Time:</strong> {{ room_activity.check_out_time }}</li>
+                    {% if room_activity.notes %}
+                    <li class="list-group-item"><strong>Notes:</strong> {{ room_activity.notes }}</li>
+                    {% endif %}
+                </ul>
+                
+                {% if missing_objects %}
+                <div class="alert alert-warning">
+                    <h6><strong>Missing Items:</strong></h6>
+                    <ul>
+                    {% for item, count in missing_objects.items %}
+                        <li>{{ item }}: {{ count }}</li>
+                    {% endfor %}
+                    </ul>
+                </div>
+                
+                <h5 class="mt-4">Detailed Comparison</h5>
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Object</th>
+                                <th>Check-in Count</th>
+                                <th>Check-out Count</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for object, count in checkin_objects.items %}
+                            <tr>
+                                <td>{{ object }}</td>
+                                <td>{{ count }}</td>
+                                <td>{{ checkout_objects|get_item:object|default:"0" }}</td>
+                                <td>
+                                    {% if checkout_objects|get_item:object|default:"0" < count %}
+                                    <span class="badge bg-danger">Missing ({{ count|subtract:checkout_objects|get_item:object|default:"0" }})</span>
+                                    {% else %}
+                                    <span class="badge bg-success">OK</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-success mt-3">
+                    <h6><strong>All Items Accounted For</strong></h6>
+                    <p>No missing items detected between check-in and check-out.</p>
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="d-flex justify-content-between mt-4">
+                <a href="{% url 'staff:dashboard' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Dashboard
+                </a>
+                
+                {% if room_activity.has_missing_items %}
+                <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#reportModal">
+                    <i class="fas fa-flag"></i> Report Missing Items
+                </button>
+                {% else %}
+                <a href="{% url 'staff:dashboard' %}" class="btn btn-success">
+                    <i class="fas fa-check-circle"></i> Complete Check-Out
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for reporting missing items -->
+{% if room_activity.has_missing_items %}
+<div class="modal fade" id="reportModal" tabindex="-1" aria-labelledby="reportModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="reportModalLabel">Report Missing Items</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>The following items appear to be missing:</p>
+                <ul>
+                {% for item, count in room_activity.missing_items_details|pprint %}
+                    <li>{{ item }}: {{ count }}</li>
+                {% endfor %}
+                </ul>
+                <p>Would you like to report these missing items to management?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <a href="{% url 'staff:dashboard' %}" class="btn btn-danger">Report & Complete Check-Out</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %} 
