@@ -192,3 +192,64 @@ class CheckoutAnalysis(models.Model):
         except Exception as e:
             print(f"Error parsing summary result: {e}")
             return {'error': 'Could not parse summary result'}
+
+class MisplacedItemsAnalysis(models.Model):
+    """Model to store analysis of misplaced items between check-in and check-out"""
+    ANALYSIS_STATUS_CHOICES = (
+        ('pending', 'Pending'),
+        ('in_progress', 'In Progress'),
+        ('completed', 'Completed'),
+        ('failed', 'Failed'),
+    )
+    
+    room_activity = models.ForeignKey(RoomActivity, on_delete=models.CASCADE, related_name='misplaced_analyses')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    status = models.CharField(max_length=15, choices=ANALYSIS_STATUS_CHOICES, default='pending')
+    
+    # Store the processed images
+    checkin_image = models.ImageField(upload_to='misplaced_analysis/images/checkin/', null=True, blank=True)
+    checkout_image = models.ImageField(upload_to='misplaced_analysis/images/checkout/', null=True, blank=True)
+    
+    # Visualization (side-by-side comparison)
+    visualization = models.ImageField(upload_to='misplaced_analysis/visualizations/', null=True, blank=True)
+    
+    # Analysis results
+    gemini_analysis = models.TextField(blank=True, null=True, help_text="Raw analysis text from Gemini AI")
+    structured_analysis = models.TextField(blank=True, null=True, help_text="JSON structured analysis data")
+    
+    # Cleanliness assessment
+    cleanliness_score = models.FloatField(default=0.0, help_text="Overall cleanliness score (0-100)")
+    cleanliness_assessment = models.TextField(blank=True, null=True, help_text="Detailed cleanliness assessment")
+    
+    # Repair assessment
+    repair_assessment = models.TextField(blank=True, null=True, help_text="Assessment of repairs needed")
+    repair_cost_estimate = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, help_text="Estimated repair costs")
+    repair_items = models.TextField(blank=True, null=True, help_text="JSON data of repair items with costs")
+    
+    def __str__(self):
+        return f"Misplaced Items Analysis for Room {self.room_activity.room_number} - {self.created_at.date()}"
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name_plural = "Misplaced Items Analyses"
+    
+    def get_structured_analysis(self):
+        """Get structured analysis as Python object"""
+        if not self.structured_analysis:
+            return {}
+        try:
+            return json.loads(self.structured_analysis)
+        except Exception as e:
+            print(f"Error parsing structured analysis: {e}")
+            return {'error': 'Could not parse structured analysis'}
+            
+    def get_repair_items(self):
+        """Get repair items as Python object"""
+        if not self.repair_items:
+            return []
+        try:
+            return json.loads(self.repair_items)
+        except Exception as e:
+            print(f"Error parsing repair items: {e}")
+            return []
