@@ -2,396 +2,797 @@
 {% load static %}
 {% load staff_extras %}
 
+
+
+
+{% block extra_css %}
+<style>
+    .comparison-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 1.5rem;
+    }
+
+    .page-header {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .page-header h2 {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: var(--text-color);
+        margin-bottom: 0.5rem;
+    }
+
+    .status-banner {
+        border-radius: 12px;
+        padding: 1.25rem;
+        margin-bottom: 2rem;
+        border: 1px solid rgba(0,0,0,0.1);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    .status-banner.success {
+        background-color: rgba(40, 167, 69, 0.1);
+        border-left: 4px solid #28a745;
+    }
+
+    .status-banner.warning {
+        background-color: rgba(255, 193, 7, 0.1);
+        border-left: 4px solid #ffc107;
+    }
+
+    .image-comparison {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .image-card {
+        background: #fff;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        border: 1px solid rgba(0,0,0,0.1);
+    }
+
+    .image-card-header {
+        padding: 1rem;
+        background: #f8f9fa;
+        border-bottom: 1px solid rgba(0,0,0,0.1);
+    }
+
+    .image-card-header h3 {
+        font-size: 1.1rem;
+        margin: 0;
+        color: var(--text-color);
+    }
+
+    .image-card-body {
+        padding: 1rem;
+    }
+
+    .image-card img {
+        width: 100%;
+        height: auto;
+        border-radius: 8px;
+    }
+
+    .room-details {
+        background: #fff;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        border: 1px solid rgba(0,0,0,0.1);
+    }
+
+    .room-details h3 {
+        font-size: 1.2rem;
+        margin-bottom: 1rem;
+        color: var(--text-color);
+    }
+
+    .details-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+    }
+
+    .detail-item {
+        padding: 0.75rem;
+        background: #f8f9fa;
+        border-radius: 8px;
+    }
+
+    .detail-item strong {
+        display: block;
+        font-size: 0.875rem;
+        color: rgba(0,0,0,0.6);
+        margin-bottom: 0.25rem;
+    }
+
+    .detail-item span {
+        font-size: 1rem;
+        color: var(--text-color);
+    }
+
+    .analysis-button {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.5rem;
+        background-color: var(--primary-color);
+        border: 1px solid var(--text-color);
+        border-radius: 8px;
+        box-shadow: 2px 2px 0px var(--text-color);
+        font-weight: 600;
+        text-decoration: none;
+        color: var(--text-color);
+        transition: all 0.2s ease;
+    }
+
+    .analysis-button:hover {
+        transform: translate(1px, 1px);
+        box-shadow: 1px 1px 0px var(--text-color);
+    }
+
+    .status-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .status-card {
+        background: #fff;
+        border-radius: 12px;
+        padding: 1.25rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        border: 1px solid rgba(0,0,0,0.1);
+    }
+
+    .status-card h4 {
+        font-size: 1.1rem;
+        margin-bottom: 1rem;
+        color: var(--text-color);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .status-card.missing {
+        border-left: 4px solid #dc3545;
+    }
+
+    .status-card.added {
+        border-left: 4px solid #0dcaf0;
+    }
+
+    .status-card.shifted {
+        border-left: 4px solid #ffc107;
+    }
+
+    .item-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .item-list li {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid rgba(0,0,0,0.05);
+    }
+
+    .item-list li:last-child {
+        border-bottom: none;
+    }
+
+    .inventory-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        background: #fff;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .inventory-table th {
+        background: #f8f9fa;
+        padding: 1rem;
+        font-weight: 600;
+        text-align: left;
+        border-bottom: 2px solid rgba(0,0,0,0.1);
+    }
+
+    .inventory-table td {
+        padding: 1rem;
+        border-bottom: 1px solid rgba(0,0,0,0.05);
+    }
+
+    .inventory-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.35rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+
+    .badge.success {
+        background-color: rgba(40, 167, 69, 0.1);
+        color: #28a745;
+    }
+
+    .badge.danger {
+        background-color: rgba(220, 53, 69, 0.1);
+        color: #dc3545;
+    }
+
+    .badge.warning {
+        background-color: rgba(255, 193, 7, 0.1);
+        color: #ffc107;
+    }
+
+    .badge.info {
+        background-color: rgba(13, 202, 240, 0.1);
+        color: #0dcaf0;
+    }
+
+    .mark-as-ok-btn {
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        border: 1px solid rgba(0,0,0,0.1);
+        background: #fff;
+        color: rgba(0,0,0,0.6);
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .mark-as-ok-btn:hover {
+        background: #f8f9fa;
+        border-color: rgba(0,0,0,0.2);
+    }
+
+    @media (max-width: 768px) {
+        .image-comparison {
+            grid-template-columns: 1fr;
+        }
+
+        .status-cards {
+            grid-template-columns: 1fr;
+        }
+
+        .inventory-table {
+            font-size: 0.875rem;
+        }
+    }
+
+    /* Action Buttons */
+    .action-buttons {
+        padding: 1.5rem;
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-top: 2rem;
+    }
+
+    .btn-back,
+    .btn-report,
+    .btn-complete,
+    .btn-cancel,
+    .btn-report-complete {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        border: 1px solid;
+    }
+
+    .btn-back {
+        background-color: #f8f9fa;
+        border-color: #dee2e6;
+        color: #6c757d;
+    }
+
+    .btn-back:hover {
+        background-color: #e9ecef;
+        color: #495057;
+    }
+
+    .btn-report {
+        background-color: #dc3545;
+        border-color: #dc3545;
+        color: #fff;
+    }
+
+    .btn-report:hover {
+        background-color: #c82333;
+        border-color: #bd2130;
+    }
+
+    .btn-complete {
+        background-color: #28a745;
+        border-color: #28a745;
+        color: #fff;
+    }
+
+    .btn-complete:hover {
+        background-color: #218838;
+        border-color: #1e7e34;
+    }
+
+    /* Modal Styles */
+    .modal-content {
+        border-radius: 12px;
+        border: none;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+
+    .modal-header {
+        background-color: #f8f9fa;
+        border-bottom: 1px solid rgba(0,0,0,0.1);
+        padding: 1.25rem;
+    }
+
+    .modal-title {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 1.25rem;
+        color: var(--text-color);
+    }
+
+    .modal-body {
+        padding: 1.5rem;
+    }
+
+    .report-section {
+        margin-bottom: 1.5rem;
+    }
+
+    .section-title {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 1rem;
+        margin-bottom: 0.75rem;
+        color: var(--text-color);
+    }
+
+    .report-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .report-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem 0.75rem;
+        background-color: #f8f9fa;
+        border-radius: 6px;
+        margin-bottom: 0.5rem;
+    }
+
+    .item-name {
+        font-weight: 500;
+    }
+
+    .item-count {
+        background-color: rgba(0,0,0,0.1);
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.875rem;
+    }
+
+    .modal-footer {
+        border-top: 1px solid rgba(0,0,0,0.1);
+        padding: 1.25rem;
+    }
+
+    .btn-cancel {
+        background-color: #f8f9fa;
+        border-color: #dee2e6;
+        color: #6c757d;
+    }
+
+    .btn-cancel:hover {
+        background-color: #e9ecef;
+        color: #495057;
+    }
+
+    .btn-report-complete {
+        background-color: #dc3545;
+        border-color: #dc3545;
+        color: #fff;
+    }
+
+    .btn-report-complete:hover {
+        background-color: #c82333;
+        border-color: #bd2130;
+    }
+
+    /* Toast Styles */
+    .toast-container {
+        position: fixed;
+        bottom: 1rem;
+        right: 1rem;
+        z-index: 1050;
+    }
+
+    .toast {
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        border: 1px solid rgba(0,0,0,0.1);
+        margin-bottom: 0.5rem;
+    }
+
+    .toast-header {
+        border-radius: 8px 8px 0 0;
+        padding: 0.75rem 1rem;
+    }
+
+    .toast-body {
+        padding: 0.75rem 1rem;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container mt-4">
-    <div class="card shadow">
-        <div class="card-header bg-primary text-white">
-            <h4 class="mb-0">Room Comparison - Room {{ room_activity.room_number }}</h4>
-        </div>
-        <div class="card-body">
-            <div class="alert {% if room_activity.has_missing_items %}alert-danger{% else %}alert-success{% endif %}">
-                <h5 class="alert-heading">
-                    {% if room_activity.has_missing_items %}
-                    <i class="fas fa-exclamation-triangle"></i> Missing Items Detected!
-                    {% else %}
-                    <i class="fas fa-check-circle"></i> All Items Accounted For
-                    {% endif %}
-                </h5>
-                
-                {% if room_activity.has_missing_items %}
-                <p>Our system has detected items that were present during check-in but are missing or misplaced during check-out.</p>
+<div class="comparison-container">
+    <div class="page-header">
+        <h2>Room {{ room_activity.room_number }} Comparison</h2>
+        <p class="text-muted">Comparing check-in and check-out state</p>
+    </div>
+
+    <div class="status-banner {% if room_activity.has_missing_items %}warning{% else %}success{% endif %}">
+        <h4 class="mb-2">
+            {% if room_activity.has_missing_items %}
+            <i class="fas fa-exclamation-triangle"></i> Missing Items Detected
+            {% else %}
+            <i class="fas fa-check-circle"></i> All Items Accounted For
+            {% endif %}
+        </h4>
+        {% if room_activity.has_missing_items %}
+        <p class="mb-2">Our system has detected items that were present during check-in but are missing or misplaced during check-out.</p>
+        {% else %}
+        <p class="mb-2">All items detected during check-in were also detected during check-out. No missing items found.</p>
+        {% endif %}
+        <small class="text-muted"><i class="fas fa-info-circle"></i> Detection threshold: {{ threshold }} items</small>
+    </div>
+
+    <div class="image-comparison">
+        <div class="image-card">
+            <div class="image-card-header">
+                <h3>Check-In Image</h3>
+                <small class="text-muted">{{ room_activity.check_in_time }}</small>
+            </div>
+            <div class="image-card-body">
+                {% if checkin_detection %}
+                <img src="{{ checkin_detection.processed_image.url }}" alt="Check-in Image">
                 {% else %}
-                <p>All items detected during check-in were also detected during check-out. No missing items found.</p>
+                <div class="alert alert-warning">Check-in image not available</div>
                 {% endif %}
-                <small class="text-muted"><i class="fas fa-info-circle"></i> Note: Our system uses a detection threshold of {{ threshold }} to account for model inaccuracies. Minor differences of {{ threshold }} or fewer items are not flagged as missing or added.</small>
             </div>
-            
-            <div class="row mt-4">
-                <div class="col-md-6">
-                    <div class="card">
-                        <div class="card-header bg-light">
-                            <h5 class="mb-0">Check-In Image</h5>
-                            <small class="text-muted">{{ room_activity.check_in_time }}</small>
-                        </div>
-                        <div class="card-body text-center">
-                            {% if checkin_detection %}
-                            <img src="{{ checkin_detection.processed_image.url }}" alt="Check-in Image" class="img-fluid rounded">
-                            {% else %}
-                            <div class="alert alert-warning">Check-in image not available</div>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="card">
-                        <div class="card-header bg-light">
-                            <h5 class="mb-0">Check-Out Image</h5>
-                            <small class="text-muted">{{ room_activity.check_out_time }}</small>
-                        </div>
-                        <div class="card-body text-center">
-                            {% if checkout_detection %}
-                            <img src="{{ checkout_detection.processed_image.url }}" alt="Check-out Image" class="img-fluid rounded">
-                            {% else %}
-                            <div class="alert alert-warning">Check-out image not available</div>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
+        </div>
+
+        <div class="image-card">
+            <div class="image-card-header">
+                <h3>Check-Out Image</h3>
+                <small class="text-muted">{{ room_activity.check_out_time }}</small>
             </div>
-            
-            <div class="mt-4">
-                <h5>
-                    Room Details
-                </h5>
-                <ul class="list-group mb-3">
-                    <li class="list-group-item"><strong>Room Number:</strong> {{ room_activity.room_number }}</li>
-                    <li class="list-group-item"><strong>Check-In Time:</strong> {{ room_activity.check_in_time }}</li>
-                    <li class="list-group-item"><strong>Check-Out Time:</strong> {{ room_activity.check_out_time }}</li>
-                    {% if room_activity.notes %}
-                    <li class="list-group-item"><strong>Notes:</strong> {{ room_activity.notes }}</li>
-                    {% endif %}
-                </ul>
+            <div class="image-card-body">
+                {% if checkout_detection %}
+                <img src="{{ checkout_detection.processed_image.url }}" alt="Check-out Image">
+                {% else %}
+                <div class="alert alert-warning">Check-out image not available</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
 
-                <div class="d-grid gap-2 mb-4">
-                    <a href="{% url 'staff:detailed_checkout_analysis' room_activity.id %}" class="btn btn-primary">
-                        <i class="fas fa-chart-line"></i> View Detailed Analysis
-                    </a>
-                    <small class="text-muted text-center">See multiple analysis methods and visualizations comparing check-in and check-out</small>
-                </div>
+    <div class="room-details">
+        <h3>Room Details</h3>
+        <div class="details-grid">
+            <div class="detail-item">
+                <strong>Room Number</strong>
+                <span>{{ room_activity.room_number }}</span>
+            </div>
+            <div class="detail-item">
+                <strong>Check-In Time</strong>
+                <span>{{ room_activity.check_in_time }}</span>
+            </div>
+            <div class="detail-item">
+                <strong>Check-Out Time</strong>
+                <span>{{ room_activity.check_out_time }}</span>
+            </div>
+            {% if room_activity.notes %}
+            <div class="detail-item">
+                <strong>Notes</strong>
+                <span>{{ room_activity.notes }}</span>
+            </div>
+            {% endif %}
+        </div>
 
-                <div class="row">
-                    <!-- Missing Items Section -->
-                    <div class="col-md-4">
-                        {% if missing_objects %}
-                        <div class="alert alert-danger">
-                            <h6><strong>Missing Items:</strong></h6>
-                            <ul class="list-unstyled mb-0">
-                            {% for item, count in missing_objects.items %}
-                                <li><i class="fas fa-times-circle text-danger"></i> {{ item }}: {{ count }}</li>
-                            {% endfor %}
-                            </ul>
-                            <small class="text-muted">Only showing differences exceeding threshold of {{ threshold }}.</small>
-                        </div>
-                        {% else %}
-                        <div class="alert alert-success">
-                            <h6><strong>No Missing Items</strong></h6>
-                            <p class="mb-0">All items from check-in were found at check-out or differences are within acceptable threshold.</p>
-                        </div>
-                        {% endif %}
-                    </div>
+        <div class="text-center mt-4">
+            <a href="{% url 'staff:detailed_checkout_analysis' room_activity.id %}" class="analysis-button">
+                <i class="fas fa-chart-line"></i>
+                View Detailed Analysis
+            </a>
+            <div class="mt-2">
+                <small class="text-muted">See multiple analysis methods and visualizations comparing check-in and check-out</small>
+            </div>
+        </div>
+    </div>
 
-                    <!-- Added Items Section -->
-                    <div class="col-md-4">
-                        {% if added_objects %}
-                        <div class="alert alert-info">
-                            <h6><strong>Added Items:</strong></h6>
-                            <ul class="list-unstyled mb-0">
-                            {% for item, count in added_objects.items %}
-                                <li><i class="fas fa-plus-circle text-info"></i> {{ item }}: {{ count }}</li>
-                            {% endfor %}
-                            </ul>
-                            <small class="text-muted">Only showing differences exceeding threshold of {{ threshold }}.</small>
-                        </div>
-                        {% else %}
-                        <div class="alert alert-secondary">
-                            <h6><strong>No Added Items</strong></h6>
-                            <p class="mb-0">No new items were detected at check-out or additions are within acceptable threshold.</p>
-                        </div>
-                        {% endif %}
-                    </div>
+    <div class="status-cards">
+        <div class="status-card missing">
+            <h4><i class="fas fa-times-circle"></i> Missing Items</h4>
+            {% if missing_objects %}
+            <ul class="item-list">
+                {% for item, count in missing_objects.items %}
+                <li><i class="fas fa-minus-circle text-danger"></i> {{ item }}: {{ count }}</li>
+                {% endfor %}
+            </ul>
+            <small class="text-muted mt-2 d-block">Only showing differences exceeding threshold of {{ threshold }}.</small>
+            {% else %}
+            <p class="mb-0">No items missing or differences within threshold.</p>
+            {% endif %}
+        </div>
 
-                    <!-- Shifted Items Section -->
-                    <div class="col-md-4">
-                        {% if shifted_objects %}
-                        <div class="alert alert-warning">
-                            <h6><strong>Shifted Items:</strong></h6>
-                            <ul class="list-unstyled mb-0">
-                            {% for item, count in shifted_objects.items %}
-                                <li><i class="fas fa-exchange-alt text-warning"></i> {{ item }}: {{ count }}</li>
-                            {% endfor %}
-                            </ul>
-                        </div>
-                        {% else %}
-                        <div class="alert alert-secondary">
-                            <h6><strong>No Shifted Items</strong></h6>
-                            <p class="mb-0">All items remain in their original positions.</p>
-                        </div>
-                        {% endif %}
-                    </div>
-                </div>
-                
-                <h5 class="mt-4">Item Inventory Comparison (Check-in vs Check-out)</h5>
-                <div class="table-responsive">
-                    <table class="table table-bordered">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Object</th>
-                                <th>Check-in Count</th>
-                                <th>Check-out Count</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for object, count in normalized_checkin_counts.items %}
-                            <tr>
-                                <td><strong>{{ object|title }}</strong></td>
-                                <td>{{ count }}</td>
-                                {% with checkout_count=normalized_checkout_counts|get_item:object|default:"0" %}
-                                <td>{{ checkout_count }}</td>
-                                <td>
-                                    {% if object in approved_items %}
-                                        <span class="badge bg-success">OK (Approved)</span>
-                                    {% elif checkout_count < count %}
-                                        {% with diff=count|subtract:checkout_count %}
-                                            {% if diff > threshold %}
-                                                <span class="badge bg-danger">Missing ({{ diff }})</span>
-                                                <form method="post" action="{% url 'staff:mark_item_as_ok' room_activity.id %}" class="d-inline ms-2">
-                                                    {% csrf_token %}
-                                                    <input type="hidden" name="item_name" value="{{ object }}">
-                                                    <button type="submit" class="btn btn-sm btn-outline-secondary mark-as-ok-btn" title="Mark as OK">
-                                                        <i class="fas fa-check"></i>
-                                                    </button>
-                                                </form>
-                                            {% else %}
-                                                <span class="badge bg-warning">Minor Diff ({{ diff }})</span>
-                                                <form method="post" action="{% url 'staff:mark_item_as_ok' room_activity.id %}" class="d-inline ms-2">
-                                                    {% csrf_token %}
-                                                    <input type="hidden" name="item_name" value="{{ object }}">
-                                                    <button type="submit" class="btn btn-sm btn-outline-secondary mark-as-ok-btn" title="Mark as OK">
-                                                        <i class="fas fa-check"></i>
-                                                    </button>
-                                                </form>
-                                            {% endif %}
-                                        {% endwith %}
-                                    {% elif checkout_count > count %}
-                                        {% with diff=checkout_count|subtract:count %}
-                                            {% if diff > threshold %}
-                                                <span class="badge bg-info">Added ({{ diff }})</span>
-                                                <form method="post" action="{% url 'staff:mark_item_as_ok' room_activity.id %}" class="d-inline ms-2">
-                                                    {% csrf_token %}
-                                                    <input type="hidden" name="item_name" value="{{ object }}">
-                                                    <button type="submit" class="btn btn-sm btn-outline-secondary mark-as-ok-btn" title="Mark as OK">
-                                                        <i class="fas fa-check"></i>
-                                                    </button>
-                                                </form>
-                                            {% else %}
-                                                <span class="badge bg-warning">Minor Diff ({{ diff }})</span>
-                                                <form method="post" action="{% url 'staff:mark_item_as_ok' room_activity.id %}" class="d-inline ms-2">
-                                                    {% csrf_token %}
-                                                    <input type="hidden" name="item_name" value="{{ object }}">
-                                                    <button type="submit" class="btn btn-sm btn-outline-secondary mark-as-ok-btn" title="Mark as OK">
-                                                        <i class="fas fa-check"></i>
-                                                    </button>
-                                                </form>
-                                            {% endif %}
-                                        {% endwith %}
-                                    {% else %}
-                                        <span class="badge bg-success">OK</span>
-                                    {% endif %}
-                                </td>
-                                {% endwith %}
-                            </tr>
-                            {% endfor %}
-                            
-                            {% for object, count in normalized_checkout_counts.items %}
-                                {% if object not in normalized_checkin_counts %}
-                                <tr>
-                                    <td><strong>{{ object|title }}</strong></td>
-                                    <td>0</td>
-                                    <td>{{ count }}</td>
-                                    <td>
-                                        {% if object in approved_items %}
-                                            <span class="badge bg-success">OK (Approved)</span>
-                                        {% elif count > threshold %}
-                                            <span class="badge bg-info">Added ({{ count }})</span>
-                                            <form method="post" action="{% url 'staff:mark_item_as_ok' room_activity.id %}" class="d-inline ms-2">
-                                                {% csrf_token %}
-                                                <input type="hidden" name="item_name" value="{{ object }}">
-                                                <button type="submit" class="btn btn-sm btn-outline-secondary mark-as-ok-btn" title="Mark as OK">
-                                                    <i class="fas fa-check"></i>
-                                                </button>
-                                            </form>
-                                        {% else %}
-                                            <span class="badge bg-warning">Minor Diff ({{ count }})</span>
-                                            <form method="post" action="{% url 'staff:mark_item_as_ok' room_activity.id %}" class="d-inline ms-2">
-                                                {% csrf_token %}
-                                                <input type="hidden" name="item_name" value="{{ object }}">
-                                                <button type="submit" class="btn btn-sm btn-outline-secondary mark-as-ok-btn" title="Mark as OK">
-                                                    <i class="fas fa-check"></i>
-                                                </button>
-                                            </form>
-                                        {% endif %}
-                                    </td>
-                                </tr>
+        <div class="status-card added">
+            <h4><i class="fas fa-plus-circle"></i> Added Items</h4>
+            {% if added_objects %}
+            <ul class="item-list">
+                {% for item, count in added_objects.items %}
+                <li><i class="fas fa-plus-circle text-info"></i> {{ item }}: {{ count }}</li>
+                {% endfor %}
+            </ul>
+            <small class="text-muted mt-2 d-block">Only showing differences exceeding threshold of {{ threshold }}.</small>
+            {% else %}
+            <p class="mb-0">No new items detected or additions within threshold.</p>
+            {% endif %}
+        </div>
+
+        <div class="status-card shifted">
+            <h4><i class="fas fa-exchange-alt"></i> Shifted Items</h4>
+            {% if shifted_objects %}
+            <ul class="item-list">
+                {% for item, count in shifted_objects.items %}
+                <li><i class="fas fa-exchange-alt text-warning"></i> {{ item }}: {{ count }}</li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="mb-0">All items remain in their original positions.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <h3 class="mb-3">Item Inventory Comparison</h3>
+        <table class="inventory-table">
+            <thead>
+                <tr>
+                    <th>Object</th>
+                    <th>Check-in Count</th>
+                    <th>Check-out Count</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for object, count in normalized_checkin_counts.items %}
+                <tr>
+                    <td><strong>{{ object|title }}</strong></td>
+                    <td>{{ count }}</td>
+                    {% with checkout_count=normalized_checkout_counts|get_item:object|default:"0" %}
+                    <td>{{ checkout_count }}</td>
+                    <td>
+                        {% if object in approved_items %}
+                            <span class="badge success">OK (Approved)</span>
+                        {% elif checkout_count < count %}
+                            {% with diff=count|subtract:checkout_count %}
+                                {% if diff > threshold %}
+                                    <span class="badge danger">Missing ({{ diff }})</span>
+                                    <form method="post" action="{% url 'staff:mark_item_as_ok' room_activity.id %}" class="d-inline ms-2">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="item_name" value="{{ object }}">
+                                        <button type="submit" class="mark-as-ok-btn" title="Mark as OK">
+                                            <i class="fas fa-check"></i>
+                                        </button>
+                                    </form>
+                                {% else %}
+                                    <span class="badge warning">Minor Diff ({{ diff }})</span>
+                                    <form method="post" action="{% url 'staff:mark_item_as_ok' room_activity.id %}" class="d-inline ms-2">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="item_name" value="{{ object }}">
+                                        <button type="submit" class="mark-as-ok-btn" title="Mark as OK">
+                                            <i class="fas fa-check"></i>
+                                        </button>
+                                    </form>
                                 {% endif %}
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-                
-                <div class="alert alert-secondary mt-3">
-                    <small><i class="fas fa-info-circle"></i> <strong>Detection Threshold:</strong> Our system uses a threshold of {{ threshold }} to account for potential model inaccuracies. Differences of {{ threshold }} or fewer items are marked as "Minor Diff" rather than "Missing" or "Added".</small>
-                </div>
-                
-                {% if missing_objects or added_objects %}
-                <div class="mt-4">
-                    <h5>Key Changes Detected</h5>
-                    <div class="row">
-                        {% if missing_objects %}
-                        <div class="col-md-6">
-                            <div class="card border-danger mb-3">
-                                <div class="card-header bg-danger text-white">
-                                    <i class="fas fa-minus-circle"></i> Items Missing from Room
-                                </div>
-                                <div class="card-body">
-                                    <ul class="list-group" id="missing-items-list">
-                                    {% for item, count in missing_objects.items %}
-                                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                                            <span>{{ item|title }}</span>
-                                            <div>
-                                                <span class="badge bg-danger rounded-pill">{{ count }}</span>
-                                                <form method="post" action="{% url 'staff:mark_item_as_ok' room_activity.id %}" class="d-inline ms-2">
-                                                    {% csrf_token %}
-                                                    <input type="hidden" name="item_name" value="{{ item }}">
-                                                    <button type="submit" class="btn btn-sm btn-outline-secondary mark-as-ok-btn" title="Mark as OK">
-                                                        <i class="fas fa-check"></i> Mark as OK
-                                                    </button>
-                                                </form>
-                                            </div>
-                                        </li>
-                                    {% endfor %}
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
+                            {% endwith %}
+                        {% elif checkout_count > count %}
+                            {% with diff=checkout_count|subtract:count %}
+                                {% if diff > threshold %}
+                                    <span class="badge info">Added ({{ diff }})</span>
+                                    <form method="post" action="{% url 'staff:mark_item_as_ok' room_activity.id %}" class="d-inline ms-2">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="item_name" value="{{ object }}">
+                                        <button type="submit" class="mark-as-ok-btn" title="Mark as OK">
+                                            <i class="fas fa-check"></i>
+                                        </button>
+                                    </form>
+                                {% else %}
+                                    <span class="badge warning">Minor Diff ({{ diff }})</span>
+                                    <form method="post" action="{% url 'staff:mark_item_as_ok' room_activity.id %}" class="d-inline ms-2">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="item_name" value="{{ object }}">
+                                        <button type="submit" class="mark-as-ok-btn" title="Mark as OK">
+                                            <i class="fas fa-check"></i>
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            {% endwith %}
+                        {% else %}
+                            <span class="badge success">OK</span>
                         {% endif %}
-                        
-                        {% if added_objects %}
-                        <div class="col-md-6">
-                            <div class="card border-info mb-3">
-                                <div class="card-header bg-info text-white">
-                                    <i class="fas fa-plus-circle"></i> Items Added to Room
-                                </div>
-                                <div class="card-body">
-                                    <ul class="list-group" id="added-items-list">
-                                    {% for item, count in added_objects.items %}
-                                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                                            <span>{{ item|title }}</span>
-                                            <div>
-                                                <span class="badge bg-info rounded-pill">{{ count }}</span>
-                                                <form method="post" action="{% url 'staff:mark_item_as_ok' room_activity.id %}" class="d-inline ms-2">
-                                                    {% csrf_token %}
-                                                    <input type="hidden" name="item_name" value="{{ item }}">
-                                                    <button type="submit" class="btn btn-sm btn-outline-secondary mark-as-ok-btn" title="Mark as OK">
-                                                        <i class="fas fa-check"></i> Mark as OK
-                                                    </button>
-                                                </form>
-                                            </div>
-                                        </li>
-                                    {% endfor %}
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
-                        {% endif %}
-                    </div>
-                </div>
-                {% endif %}
-            </div>
-            
-            <div class="d-flex justify-content-between mt-4">
-                <a href="{% url 'staff:dashboard' %}" class="btn btn-secondary">
-                    <i class="fas fa-arrow-left"></i> Back to Dashboard
-                </a>
+                    </td>
+                    {% endwith %}
+                </tr>
+                {% endfor %}
                 
+                {% for object, count in normalized_checkout_counts.items %}
+                    {% if object not in normalized_checkin_counts %}
+                    <tr>
+                        <td><strong>{{ object|title }}</strong></td>
+                        <td>0</td>
+                        <td>{{ count }}</td>
+                        <td>
+                            {% if object in approved_items %}
+                                <span class="badge success">OK (Approved)</span>
+                            {% elif count > threshold %}
+                                <span class="badge info">Added ({{ count }})</span>
+                                <form method="post" action="{% url 'staff:mark_item_as_ok' room_activity.id %}" class="d-inline ms-2">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="item_name" value="{{ object }}">
+                                    <button type="submit" class="mark-as-ok-btn" title="Mark as OK">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                </form>
+                            {% else %}
+                                <span class="badge warning">Minor Diff ({{ count }})</span>
+                                <form method="post" action="{% url 'staff:mark_item_as_ok' room_activity.id %}" class="d-inline ms-2">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="item_name" value="{{ object }}">
+                                    <button type="submit" class="mark-as-ok-btn" title="Mark as OK">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endif %}
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="action-buttons mt-4 d-flex justify-content-between align-items-center">
+        <a href="{% url 'staff:dashboard' %}" class="btn-back">
+            <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </a>
+        
                 <div>
                     <a href="{% url 'staff:misplaced_items_analysis' activity_id=room_activity.id %}" class="btn btn-primary me-2">
                         <i class="fas fa-exchange-alt"></i> Analyze Misplaced Items
                     </a>
                     
-                    {% if room_activity.has_missing_items or added_objects or shifted_objects %}
-                    <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#reportModal" id="reportIssuesBtn">
-                        <i class="fas fa-flag"></i> Report Issues
-                    </button>
-                    {% else %}
-                    <a href="{% url 'staff:dashboard' %}" class="btn btn-success" id="completeBtn">
-                        <i class="fas fa-check-circle"></i> Complete Check-Out
-                    </a>
-                    {% endif %}
+            {% if room_activity.has_missing_items or added_objects or shifted_objects %}
+            <button class="btn-report" data-bs-toggle="modal" data-bs-target="#reportModal" id="reportIssuesBtn">
+                <i class="fas fa-flag"></i> Report Issues
+            </button>
+            {% else %}
+            <a href="{% url 'staff:dashboard' %}" class="btn-complete" id="completeBtn">
+                <i class="fas fa-check-circle"></i> Complete Check-Out
+            </a>
+            {% endif %}
                 </div>
-            </div>
-        </div>
     </div>
 </div>
 
 <!-- Modal for reporting missing items -->
 {% if room_activity.has_missing_items or added_objects or shifted_objects %}
 <div class="modal fade" id="reportModal" tabindex="-1" aria-labelledby="reportModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-            <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title" id="reportModalLabel">Report Room Issues</h5>
+            <div class="modal-header">
+                <h5 class="modal-title" id="reportModalLabel">
+                    <i class="fas fa-exclamation-triangle text-danger"></i>
+                    Report Room Issues
+                </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body" id="reportModalBody">
                 {% if missing_objects %}
-                <div id="missing-objects-section">
-                    <h6>Missing Items:</h6>
-                    <ul id="report-missing-items-list">
+                <div id="missing-objects-section" class="report-section">
+                    <h6 class="section-title">
+                        <i class="fas fa-minus-circle text-danger"></i>
+                        Missing Items:
+                    </h6>
+                    <ul id="report-missing-items-list" class="report-list">
                     {% for item, count in missing_objects.items %}
-                        <li data-item-name="{{ item }}">{{ item }}: {{ count }}</li>
+                        <li data-item-name="{{ item }}" class="report-item">
+                            <span class="item-name">{{ item }}</span>
+                            <span class="item-count">{{ count }}</span>
+                        </li>
                     {% endfor %}
                     </ul>
                 </div>
                 {% endif %}
                 
                 {% if added_objects %}
-                <div id="added-objects-section">
-                    <h6>Added Items:</h6>
-                    <ul id="report-added-items-list">
+                <div id="added-objects-section" class="report-section">
+                    <h6 class="section-title">
+                        <i class="fas fa-plus-circle text-info"></i>
+                        Added Items:
+                    </h6>
+                    <ul id="report-added-items-list" class="report-list">
                     {% for item, count in added_objects.items %}
-                        <li data-item-name="{{ item }}">{{ item }}: {{ count }}</li>
+                        <li data-item-name="{{ item }}" class="report-item">
+                            <span class="item-name">{{ item }}</span>
+                            <span class="item-count">{{ count }}</span>
+                        </li>
                     {% endfor %}
                     </ul>
                 </div>
                 {% endif %}
                 
                 {% if shifted_objects %}
-                <div id="shifted-objects-section">
-                    <h6>Shifted Items:</h6>
-                    <ul id="report-shifted-items-list">
+                <div id="shifted-objects-section" class="report-section">
+                    <h6 class="section-title">
+                        <i class="fas fa-exchange-alt text-warning"></i>
+                        Shifted Items:
+                    </h6>
+                    <ul id="report-shifted-items-list" class="report-list">
                     {% for item, count in shifted_objects.items %}
-                        <li data-item-name="{{ item }}">{{ item }}</li>
+                        <li data-item-name="{{ item }}" class="report-item">
+                            <span class="item-name">{{ item }}</span>
+                            {% if count %}<span class="item-count">{{ count }}</span>{% endif %}
+                        </li>
                     {% endfor %}
                     </ul>
                 </div>
                 {% endif %}
                 
-                <p>Would you like to report these issues to management?</p>
+                <div class="alert alert-warning mt-3">
+                    <i class="fas fa-info-circle"></i>
+                    Would you like to report these issues to management?
+                </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <a href="{% url 'staff:dashboard' %}" class="btn btn-danger">Report & Complete Check-Out</a>
+                <button type="button" class="btn-cancel" data-bs-dismiss="modal">Cancel</button>
+                <a href="{% url 'staff:dashboard' %}" class="btn-report-complete">
+                    <i class="fas fa-paper-plane"></i>
+                    Report & Complete Check-Out
+                </a>
             </div>
         </div>
     </div>
@@ -411,7 +812,7 @@
         function updateReportButton() {
             const reportBtn = document.getElementById('reportIssuesBtn');
             const completeBtn = document.getElementById('completeBtn');
-            const buttonContainer = document.querySelector('.d-flex.justify-content-between.mt-4');
+            const buttonContainer = document.querySelector('.action-buttons');
             
             if (missingItemsCount === 0 && addedItemsCount === 0 && shiftedItemsCount === 0) {
                 // No issues to report, show complete button instead
@@ -423,7 +824,7 @@
                     // Create complete button if it doesn't exist
                     const newCompleteBtn = document.createElement('a');
                     newCompleteBtn.href = "{% url 'staff:dashboard' %}";
-                    newCompleteBtn.className = "btn btn-success";
+                    newCompleteBtn.className = "btn-complete";
                     newCompleteBtn.id = "completeBtn";
                     newCompleteBtn.innerHTML = '<i class="fas fa-check-circle"></i> Complete Check-Out';
                     buttonContainer.appendChild(newCompleteBtn);
@@ -447,15 +848,25 @@
             const modalItemsList = document.querySelector(`#report-${itemType}-items-list`);
             if (modalItemsList) {
                 const itemElements = modalItemsList.querySelectorAll(`li[data-item-name="${itemName}"]`);
-                itemElements.forEach(element => element.remove());
+                itemElements.forEach(element => {
+                    element.style.transition = 'all 0.3s ease';
+                    element.style.opacity = '0';
+                    element.style.transform = 'translateX(-20px)';
+                    setTimeout(() => element.remove(), 300);
+                });
                 
                 // If no more items in this category, hide the section
-                if (modalItemsList.children.length === 0) {
-                    const section = document.getElementById(`${itemType}-objects-section`);
-                    if (section) {
-                        section.style.display = 'none';
+                setTimeout(() => {
+                    if (modalItemsList.children.length === 0) {
+                        const section = document.getElementById(`${itemType}-objects-section`);
+                        if (section) {
+                            section.style.transition = 'all 0.3s ease';
+                            section.style.opacity = '0';
+                            section.style.height = '0';
+                            setTimeout(() => section.style.display = 'none', 300);
+                        }
                     }
-                }
+                }, 300);
             }
             
             // Check if modal should be hidden entirely (no more issues)
@@ -479,7 +890,9 @@
                 const itemName = form.querySelector('input[name="item_name"]').value;
                 const csrfToken = form.querySelector('input[name="csrfmiddlewaretoken"]').value;
                 
-                console.log('Button clicked', itemName);
+                // Add loading state
+                this.disabled = true;
+                this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
                 
                 // Send AJAX request
                 fetch(form.action, {
@@ -493,8 +906,6 @@
                 })
                 .then(response => response.json())
                 .then(data => {
-                    console.log('Response data:', data);
-                    
                     // Always consider as success if the item was approved
                     if (data.status === 'success' && (data.updated || data.approved)) {
                         // Update issue counts based on response type
@@ -518,9 +929,9 @@
                         
                         // Handle list items in the Key Changes section
                         if (listItem) {
-                            // Fade out and remove
-                            listItem.style.transition = 'opacity 0.3s';
+                            listItem.style.transition = 'all 0.3s ease';
                             listItem.style.opacity = '0';
+                            listItem.style.transform = 'translateX(-20px)';
                             setTimeout(() => {
                                 listItem.remove();
                                 
@@ -529,9 +940,12 @@
                                     const parentList = document.querySelector(`#${data.type}-items-list`);
                                     if (parentList && parentList.querySelectorAll('li').length === 0) {
                                         // If no more items, hide the section
-                                        const section = parentList.closest('.card');
+                                        const section = parentList.closest('.status-card');
                                         if (section) {
-                                            section.style.display = 'none';
+                                            section.style.transition = 'all 0.3s ease';
+                                            section.style.opacity = '0';
+                                            section.style.height = '0';
+                                            setTimeout(() => section.style.display = 'none', 300);
                                         }
                                     }
                                 }
@@ -540,23 +954,28 @@
                         
                         // Handle table rows
                         if (tableRow) {
-                            // Update the status cell
                             const statusCell = tableRow.querySelector('td:last-child');
                             if (statusCell) {
-                                statusCell.innerHTML = '<span class="badge bg-success">OK</span>';
+                                statusCell.innerHTML = '<span class="badge success">OK</span>';
                             }
                         }
                         
-                        // Show a toast notification
-                        showToast(`${itemName} marked as OK`);
+                        // Show success toast
+                        showToast(`${itemName} marked as OK`, 'success');
                     } else {
-                        console.error('Failed to update item status', data);
+                        // Show error toast
                         showToast(`Failed to mark ${itemName} as OK`, 'danger');
+                        // Reset button
+                        this.disabled = false;
+                        this.innerHTML = '<i class="fas fa-check"></i>';
                     }
                 })
                 .catch(error => {
                     console.error('Error:', error);
                     showToast(`Error processing request: ${error.message}`, 'danger');
+                    // Reset button
+                    this.disabled = false;
+                    this.innerHTML = '<i class="fas fa-check"></i>';
                 });
             });
         });
@@ -570,8 +989,7 @@
         // Toast notification function with optional type (success, danger, etc)
         function showToast(message, type = 'success') {
             const toast = document.createElement('div');
-            toast.className = 'position-fixed bottom-0 end-0 p-3 toast-container';
-            toast.style.zIndex = '5';
+            toast.className = 'toast-container';
             
             toast.innerHTML = `
                 <div class="toast show" role="alert" aria-live="assertive" aria-atomic="true">
@@ -587,9 +1005,22 @@
             
             document.body.appendChild(toast);
             
-            // Remove after 3 seconds
+            // Add entrance animation
+            requestAnimationFrame(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(20px)';
+                requestAnimationFrame(() => {
+                    toast.style.transition = 'all 0.3s ease';
+                    toast.style.opacity = '1';
+                    toast.style.transform = 'translateY(0)';
+                });
+            });
+            
+            // Remove after 3 seconds with exit animation
             setTimeout(() => {
-                toast.remove();
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(20px)';
+                setTimeout(() => toast.remove(), 300);
             }, 3000);
         }
     });
