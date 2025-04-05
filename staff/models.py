@@ -33,6 +33,7 @@ class RoomActivity(models.Model):
     missing_items_details = models.TextField(blank=True, null=True)
     added_items = models.TextField(blank=True, null=True)
     shifted_items = models.TextField(blank=True, null=True)
+    approved_items = models.TextField(blank=True, null=True, help_text="JSON list of items that have been manually marked as OK")
     
     def __str__(self):
         return f"Room {self.room_number} - {self.status} - {self.check_in_time.date()}"

@@ -18,4 +18,5 @@ urlpatterns = [
     path('room/check-out/<int:activity_id>/', views.room_check_out, name='room_check_out'),
     path('room/check-out/upload/<int:activity_id>/', views.upload_checkout_image, name='upload_checkout_image'),
     path('room/comparison/<int:activity_id>/', views.view_comparison, name='view_comparison'),
+    path('room/mark-as-ok/<int:activity_id>/', views.mark_item_as_ok, name='mark_item_as_ok'),
 ] 
