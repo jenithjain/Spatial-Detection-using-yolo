@@ -1,6 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
-from manager.models import Manager
+from manager.models import Manager, Room
 
 # Create your models here.
 
@@ -23,6 +23,7 @@ class RoomActivity(models.Model):
     
     staff_member = models.ForeignKey(StaffMember, on_delete=models.CASCADE)
     room_number = models.CharField(max_length=20)
+    room = models.ForeignKey(Room, on_delete=models.SET_NULL, null=True, blank=True)
     check_in_time = models.DateTimeField(auto_now_add=True)
     check_out_time = models.DateTimeField(null=True, blank=True)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='active')
@@ -30,6 +31,8 @@ class RoomActivity(models.Model):
     yolo_session_id = models.CharField(max_length=100, blank=True, null=True)
     has_missing_items = models.BooleanField(default=False)
     missing_items_details = models.TextField(blank=True, null=True)
+    added_items = models.TextField(blank=True, null=True)
+    shifted_items = models.TextField(blank=True, null=True)
     
     def __str__(self):
         return f"Room {self.room_number} - {self.status} - {self.check_in_time.date()}"

@@ -26,6 +26,51 @@
                         </div>
                     </div>
 
+                    <!-- Hotel Room Inventory Section -->
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <div class="card">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <h4 class="mb-0">Hotel Room Inventory</h4>
+                                </div>
+                                <div class="card-body">
+                                    {% if rooms_with_inventory %}
+                                    <div class="row">
+                                        {% for room_data in rooms_with_inventory %}
+                                        <div class="col-md-6 mb-4">
+                                            <div class="card">
+                                                <div class="card-header bg-light">
+                                                    <h5 class="mb-0">Room {{ room_data.room.room_number }} - {{ room_data.room.room_type }}</h5>
+                                                </div>
+                                                <div class="card-body">
+                                                    {% if room_data.inventory %}
+                                                    <ul class="list-group list-group-flush">
+                                                        {% for item in room_data.inventory %}
+                                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                            {{ item.item_name }}
+                                                            <span class="badge bg-primary rounded-pill">{{ item.quantity }}</span>
+                                                        </li>
+                                                        {% endfor %}
+                                                    </ul>
+                                                    {% else %}
+                                                    <p class="text-muted">No inventory items recorded for this room.</p>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                    {% else %}
+                                    <div class="alert alert-info">
+                                        <p class="mb-0">No rooms have been set up yet. Please add rooms and their inventory items.</p>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- End Hotel Room Inventory Section -->
+
                     <h4>Staff Members</h4>
                     {% if staff_members %}
                     <div class="table-responsive">

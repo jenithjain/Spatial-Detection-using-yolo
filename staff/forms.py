@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 from .models import StaffMember, RoomActivity
-from manager.models import Manager
+from manager.models import Manager, Room
 
 class StaffRegistrationForm(UserCreationForm):
     first_name = forms.CharField(max_length=30, required=True)
@@ -44,10 +44,16 @@ class StaffRegistrationForm(UserCreationForm):
         return user
 
 class RoomCheckInForm(forms.ModelForm):
-    room_number = forms.CharField(max_length=20, required=True, widget=forms.TextInput(attrs={
-        'class': 'form-control',
-        'placeholder': 'Enter room number'
-    }))
+    room_id = forms.ModelChoiceField(
+        queryset=Room.objects.filter(is_active=True),
+        empty_label="Select a room",
+        required=True,
+        widget=forms.Select(attrs={
+            'class': 'form-control',
+        }),
+        to_field_name='id',
+        label="Room"
+    )
     notes = forms.CharField(required=False, widget=forms.Textarea(attrs={
         'class': 'form-control',
         'placeholder': 'Enter any notes about the room',
@@ -56,7 +62,17 @@ class RoomCheckInForm(forms.ModelForm):
     
     class Meta:
         model = RoomActivity
-        fields = ('room_number', 'notes')
+        fields = ('notes',)
+        
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        room = self.cleaned_data['room_id']
+        instance.room_number = room.room_number
+        instance.room_id = room.id
+        
+        if commit:
+            instance.save()
+        return instance
 
 class RoomCheckOutForm(forms.Form):
     notes = forms.CharField(required=False, widget=forms.Textarea(attrs={
