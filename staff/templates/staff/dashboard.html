@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Staff Dashboard{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card shadow">
+                <div class="card-header">
+                    <h3 class="card-title mb-0">Welcome, {{ staff_member.user.get_full_name }}</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h4>Personal Details</h4>
+                            <p><strong>Name:</strong> {{ staff_member.user.get_full_name }}</p>
+                            <p><strong>Email:</strong> {{ staff_member.user.email }}</p>
+                            <p><strong>Phone:</strong> {{ staff_member.phone_number }}</p>
+                            <p><strong>Role:</strong> {{ staff_member.role }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h4>Organization Details</h4>
+                            <p><strong>Organization:</strong> {{ staff_member.manager.organization_name }}</p>
+                            <p><strong>Manager:</strong> {{ staff_member.manager.user.get_full_name }}</p>
+                        </div>
+                    </div>
+
+                    <div class="row mt-4">
+                        <div class="col-md-12">
+                            <h4>Tools</h4>
+                            <div class="list-group">
+                                <a href="{% url 'yolo:upload' %}" class="list-group-item list-group-item-action">
+                                    <i class="fas fa-camera"></i> Room Object Detection
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-4">
+                        <div class="col-md-12">
+                            <h4>Recent Activity</h4>
+                            <div class="alert alert-info">
+                                <p class="mb-0">No recent activity to display.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Room Object Detection</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .upload-form {
+            margin-bottom: 20px;
+        }
+        .result-container {
+            margin-top: 20px;
+            text-align: center;
+        }
+        #resultImage {
+            max-width: 100%;
+            margin-top: 20px;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .loading {
+            display: none;
+            margin: 20px 0;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Room Object Detection</h1>
+        <div class="upload-form">
+            <form id="uploadForm">
+                <input type="file" id="imageInput" accept="image/*" required>
+                <button type="submit">Process Image</button>
+            </form>
+        </div>
+        <div class="loading" id="loading">
+            Processing image... Please wait...
+        </div>
+        <div class="result-container">
+            <h2>Detection Results</h2>
+            <img id="resultImage" style="display: none;">
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const imageInput = document.getElementById('imageInput');
+            const loading = document.getElementById('loading');
+            const resultImage = document.getElementById('resultImage');
+            
+            if (!imageInput.files[0]) {
+                alert('Please select an image first');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('image', imageInput.files[0]);
+
+            loading.style.display = 'block';
+            resultImage.style.display = 'none';
+
+            try {
+                const response = await fetch('/yolo/process-image/', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultImage.src = 'data:image/jpeg;base64,' + data.image;
+                    resultImage.style.display = 'block';
+                } else {
+                    alert('Error processing image: ' + data.error);
+                }
+            } catch (error) {
+                alert('Error processing image: ' + error.message);
+            } finally {
+                loading.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html> 

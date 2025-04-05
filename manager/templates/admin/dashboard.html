@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Manager Dashboard{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card shadow">
+                <div class="card-header">
+                    <h3 class="card-title mb-0">Welcome, {{ manager.organization_name }}</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h4>Organization Details</h4>
+                            <p><strong>Name:</strong> {{ manager.organization_name }}</p>
+                            <p><strong>Email:</strong> {{ manager.user.email }}</p>
+                            <p><strong>Phone:</strong> {{ manager.phone_number }}</p>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <a href="{% url 'staff:register' %}" class="btn btn-primary">
+                                Add New Staff Member
+                            </a>
+                        </div>
+                    </div>
+
+                    <h4>Staff Members</h4>
+                    {% if staff_members %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Phone</th>
+                                    <th>Role</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for staff in staff_members %}
+                                <tr>
+                                    <td>{{ staff.user.get_full_name }}</td>
+                                    <td>{{ staff.user.email }}</td>
+                                    <td>{{ staff.phone_number }}</td>
+                                    <td>{{ staff.role }}</td>
+                                    <td>
+                                        <a href="#" class="btn btn-sm btn-info">Edit</a>
+                                        <a href="#" class="btn btn-sm btn-danger">Delete</a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted">No staff members registered yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

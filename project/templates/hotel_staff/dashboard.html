@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3>Welcome, {{ staff_member.user.username }}</h3>
+                </div>
+                <div class="card-body">
+                    <p><strong>Employee ID:</strong> {{ staff_member.employee_id }}</p>
+                    <p><strong>Contact:</strong> {{ staff_member.contact_number }}</p>
+                    <p><strong>Hotel:</strong> {{ staff_member.manager.hotel_name }}</p>
+                    <p><strong>Manager:</strong> {{ staff_member.manager.user.username }}</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h4>Room Scanning</h4>
+                </div>
+                <div class="card-body text-center">
+                    <p class="mb-4">Use this section to scan and compare room states.</p>
+                    <div class="d-grid gap-3 col-md-6 mx-auto">
+                        <button class="btn btn-primary btn-lg">
+                            Scan Room (Coming Soon)
+                        </button>
+                        <button class="btn btn-secondary btn-lg">
+                            View Scan History (Coming Soon)
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

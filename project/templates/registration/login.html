@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Login{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-body">
+                    <h2 class="card-title text-center mb-4">Choose Login Type</h2>
+                    
+                    {% if messages %}
+                    <div class="messages">
+                        {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }}">
+                            {{ message }}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <div class="d-grid gap-3">
+                        <a href="{% url 'manager:login' %}" class="btn btn-primary btn-lg">
+                            <i class="fas fa-user-tie me-2"></i>Login as Manager
+                        </a>
+                        <a href="{% url 'staff:login' %}" class="btn btn-success btn-lg">
+                            <i class="fas fa-user me-2"></i>Login as Staff
+                        </a>
+                    </div>
+
+                    <div class="mt-4 text-center">
+                        <p>Don't have an account?</p>
+                        <div class="d-grid gap-2">
+                            <a href="{% url 'manager:register' %}" class="btn btn-outline-primary">Register as Manager</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
