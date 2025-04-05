@@ -70,18 +70,135 @@
                     <li class="list-group-item"><strong>Notes:</strong> {{ room_activity.notes }}</li>
                     {% endif %}
                 </ul>
-                
-                {% if missing_objects %}
-                <div class="alert alert-warning">
-                    <h6><strong>Missing Items:</strong></h6>
-                    <ul>
-                    {% for item, count in missing_objects.items %}
-                        <li>{{ item }}: {{ count }}</li>
-                    {% endfor %}
-                    </ul>
+
+                <div class="row">
+                    <!-- Missing Items Section -->
+                    <div class="col-md-4">
+                        {% if missing_objects %}
+                        <div class="alert alert-danger">
+                            <h6><strong>Missing Items:</strong></h6>
+                            <ul class="list-unstyled mb-0">
+                            {% for item, count in missing_objects.items %}
+                                <li><i class="fas fa-times-circle text-danger"></i> {{ item }}: {{ count }}</li>
+                            {% endfor %}
+                            </ul>
+                        </div>
+                        {% else %}
+                        <div class="alert alert-success">
+                            <h6><strong>No Missing Items</strong></h6>
+                            <p class="mb-0">All items from check-in were found at check-out.</p>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Added Items Section -->
+                    <div class="col-md-4">
+                        {% if added_objects %}
+                        <div class="alert alert-info">
+                            <h6><strong>Added Items:</strong></h6>
+                            <ul class="list-unstyled mb-0">
+                            {% for item, count in added_objects.items %}
+                                <li><i class="fas fa-plus-circle text-info"></i> {{ item }}: {{ count }}</li>
+                            {% endfor %}
+                            </ul>
+                        </div>
+                        {% else %}
+                        <div class="alert alert-secondary">
+                            <h6><strong>No Added Items</strong></h6>
+                            <p class="mb-0">No new items were detected at check-out.</p>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Shifted Items Section -->
+                    <div class="col-md-4">
+                        {% if shifted_objects %}
+                        <div class="alert alert-warning">
+                            <h6><strong>Shifted Items:</strong></h6>
+                            <ul class="list-unstyled mb-0">
+                            {% for item, count in shifted_objects.items %}
+                                <li><i class="fas fa-exchange-alt text-warning"></i> {{ item }}: {{ count }}</li>
+                            {% endfor %}
+                            </ul>
+                        </div>
+                        {% else %}
+                        <div class="alert alert-secondary">
+                            <h6><strong>No Shifted Items</strong></h6>
+                            <p class="mb-0">All items remain in their original positions.</p>
+                        </div>
+                        {% endif %}
+                    </div>
                 </div>
                 
-                <h5 class="mt-4">Detailed Comparison</h5>
+                <h5 class="mt-4">Expected Room Inventory vs. Detected Items</h5>
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Item</th>
+                                <th>Expected Quantity</th>
+                                <th>Check-in Count</th>
+                                <th>Check-out Count</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item, quantity in room_inventory.items %}
+                            <tr>
+                                <td>{{ item }}</td>
+                                <td>{{ quantity }}</td>
+                                <td>
+                                    {% with detected=0 %}
+                                        {% for obj, count in checkin_objects.items %}
+                                            {% if item|lower in obj|lower %}
+                                                {% with detected=count %}{{ detected }}{% endwith %}
+                                            {% endif %}
+                                        {% endfor %}
+                                        {% if detected == 0 %}0{% endif %}
+                                    {% endwith %}
+                                </td>
+                                <td>
+                                    {% with detected=0 %}
+                                        {% for obj, count in checkout_objects.items %}
+                                            {% if item|lower in obj|lower %}
+                                                {% with detected=count %}{{ detected }}{% endwith %}
+                                            {% endif %}
+                                        {% endfor %}
+                                        {% if detected == 0 %}0{% endif %}
+                                    {% endwith %}
+                                </td>
+                                <td>
+                                    {% with checkin_count=0 checkout_count=0 %}
+                                        {% for obj, count in checkin_objects.items %}
+                                            {% if item|lower in obj|lower %}
+                                                {% with checkin_count=count %}{% endwith %}
+                                            {% endif %}
+                                        {% endfor %}
+                                        
+                                        {% for obj, count in checkout_objects.items %}
+                                            {% if item|lower in obj|lower %}
+                                                {% with checkout_count=count %}{% endwith %}
+                                            {% endif %}
+                                        {% endfor %}
+                                        
+                                        {% if checkin_count > checkout_count %}
+                                            <span class="badge bg-danger">Missing</span>
+                                        {% elif checkout_count > checkin_count %}
+                                            <span class="badge bg-info">Added</span>
+                                        {% elif checkin_count == 0 and checkout_count == 0 %}
+                                            <span class="badge bg-secondary">Not Detected</span>
+                                        {% else %}
+                                            <span class="badge bg-success">OK</span>
+                                        {% endif %}
+                                    {% endwith %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <h5 class="mt-4">Detected Objects Comparison</h5>
                 <div class="table-responsive">
                     <table class="table table-bordered">
                         <thead class="table-light">
@@ -100,8 +217,10 @@
                                 {% with checkout_count=checkout_objects|get_item:object|default:"0" %}
                                 <td>{{ checkout_count }}</td>
                                 <td>
-                                    {% if checkout_count < count %}
-                                    <span class="badge bg-danger">Missing ({{ count|subtract:checkout_count }})</span>
+                                    {% if checkout_objects|get_item:object|default:"0" < count %}
+                                    <span class="badge bg-danger">Missing ({{ count|subtract:checkout_objects|get_item:object|default:"0" }})</span>
+                                    {% elif checkout_objects|get_item:object|default:"0" > count %}
+                                    <span class="badge bg-info">Added ({{ checkout_objects|get_item:object|default:"0"|subtract:count }})</span>
                                     {% else %}
                                     <span class="badge bg-success">OK</span>
                                     {% endif %}
@@ -109,15 +228,20 @@
                                 {% endwith %}
                             </tr>
                             {% endfor %}
+                            
+                            {% for object, count in checkout_objects.items %}
+                                {% if object not in checkin_objects %}
+                                <tr>
+                                    <td>{{ object }}</td>
+                                    <td>0</td>
+                                    <td>{{ count }}</td>
+                                    <td><span class="badge bg-info">Added ({{ count }})</span></td>
+                                </tr>
+                                {% endif %}
+                            {% endfor %}
                         </tbody>
                     </table>
                 </div>
-                {% else %}
-                <div class="alert alert-success mt-3">
-                    <h6><strong>All Items Accounted For</strong></h6>
-                    <p>No missing items detected between check-in and check-out.</p>
-                </div>
-                {% endif %}
             </div>
             
             <div class="d-flex justify-content-between mt-4">
@@ -125,9 +249,9 @@
                     <i class="fas fa-arrow-left"></i> Back to Dashboard
                 </a>
                 
-                {% if room_activity.has_missing_items %}
+                {% if room_activity.has_missing_items or added_objects or shifted_objects %}
                 <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#reportModal">
-                    <i class="fas fa-flag"></i> Report Missing Items
+                    <i class="fas fa-flag"></i> Report Issues
                 </button>
                 {% else %}
                 <a href="{% url 'staff:dashboard' %}" class="btn btn-success">
@@ -140,28 +264,43 @@
 </div>
 
 <!-- Modal for reporting missing items -->
-{% if room_activity.has_missing_items %}
+{% if room_activity.has_missing_items or added_objects or shifted_objects %}
 <div class="modal fade" id="reportModal" tabindex="-1" aria-labelledby="reportModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title" id="reportModalLabel">Report Missing Items</h5>
+                <h5 class="modal-title" id="reportModalLabel">Report Room Issues</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <p>The following items appear to be missing:</p>
+                {% if missing_objects %}
+                <h6>Missing Items:</h6>
                 <ul>
-                {% with missing_items=room_activity.get_missing_items %}
-                    {% if missing_items %}
-                        {% for item, count in missing_items.items %}
-                            <li>{{ item }}: {{ count }}</li>
-                        {% endfor %}
-                    {% else %}
-                        <li>Details not available</li>
-                    {% endif %}
-                {% endwith %}
+                {% for item, count in missing_objects.items %}
+                    <li>{{ item }}: {{ count }}</li>
+                {% endfor %}
                 </ul>
-                <p>Would you like to report these missing items to management?</p>
+                {% endif %}
+                
+                {% if added_objects %}
+                <h6>Added Items:</h6>
+                <ul>
+                {% for item, count in added_objects.items %}
+                    <li>{{ item }}: {{ count }}</li>
+                {% endfor %}
+                </ul>
+                {% endif %}
+                
+                {% if shifted_objects %}
+                <h6>Shifted Items:</h6>
+                <ul>
+                {% for item, count in shifted_objects.items %}
+                    <li>{{ item }}</li>
+                {% endfor %}
+                </ul>
+                {% endif %}
+                
+                <p>Would you like to report these issues to management?</p>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>

@@ -393,8 +393,91 @@ def process_image(request):
             detection.set_detection_data(detections)
             detection.save()
             
+            # Prepare response data
+            response_data = {
+                'success': True,
+                'image': img_str,
+                'detections': detections,
+                'session_id': session_id,
+                'detection_id': detection.id
+            }
+            
+            # Check inventory at check-in time
+            if detection_type == 'checkin' and staff_member_id:
+                from staff.models import RoomActivity
+                from manager.models import Room, RoomInventory
+                
+                try:
+                    # Get the room activity
+                    room_activity = RoomActivity.objects.get(
+                        yolo_session_id=session_id,
+                        staff_member_id=staff_member_id
+                    )
+                    
+                    # Get room inventory if there is a linked room
+                    if room_activity.room:
+                        # Get expected inventory from database
+                        room_inventory = {}
+                        inventory_items = room_activity.room.inventory_items.all()
+                        for item in inventory_items:
+                            room_inventory[item.item_name.lower()] = item.quantity
+                        
+                        # Get detected objects
+                        detected_objects = {}
+                        for item in detections:
+                            class_name = item['class'].lower()
+                            if class_name not in detected_objects:
+                                detected_objects[class_name] = 0
+                            detected_objects[class_name] += 1
+                        
+                        # Compare expected vs. detected
+                        inventory_comparison = {}
+                        
+                        # Check each inventory item
+                        for item_name, expected_count in room_inventory.items():
+                            detected = False
+                            actual_count = 0
+                            
+                            # Check for exact matches or similar items
+                            for det_name, det_count in detected_objects.items():
+                                if item_name in det_name or det_name in item_name:
+                                    detected = True
+                                    actual_count = det_count
+                                    break
+                            
+                            # A match is valid only if we detected at least the expected quantity
+                            match = actual_count >= expected_count
+                            
+                            inventory_comparison[item_name] = {
+                                'expected': expected_count,
+                                'detected': actual_count,
+                                'match': match
+                            }
+                        
+                        # Add missing items that weren't in inventory
+                        for det_name, det_count in detected_objects.items():
+                            found = False
+                            for item_name in room_inventory.keys():
+                                if item_name in det_name or det_name in item_name:
+                                    found = True
+                                    break
+                            
+                            if not found:
+                                inventory_comparison[det_name] = {
+                                    'expected': 0,
+                                    'detected': det_count,
+                                    'match': False,
+                                    'extra': True
+                                }
+                        
+                        # Add inventory comparison to response
+                        response_data['inventory_comparison'] = inventory_comparison
+                        
+                except (RoomActivity.DoesNotExist, Room.DoesNotExist):
+                    pass
+            
             # Update RoomActivity if this is a checkout image
-            if detection_type == 'checkout' and staff_member_id:
+            elif detection_type == 'checkout' and staff_member_id:
                 from staff.models import RoomActivity
                 try:
                     # Get the latest room activity for this session
@@ -455,13 +538,7 @@ def process_image(request):
                 print(f"Warning: Could not remove temporary file {temp_path}: {str(e)}")
                 # Continue processing instead of failing
             
-            return JsonResponse({
-                'success': True,
-                'image': img_str,
-                'detections': detections,
-                'session_id': session_id,
-                'detection_id': detection.id
-            })
+            return JsonResponse(response_data)
             
         except Exception as e:
             if os.path.exists(temp_path):
