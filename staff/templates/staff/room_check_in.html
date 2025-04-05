@@ -1,57 +1,374 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Room Check-In - ScanFlow</title>
-    <!-- Add Font Awesome for icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-</head>
-<body>
-<div class="app-container">
-    <!-- Main content -->
-    <main class="main-content">
-        <header class="header">
-            <div class="logo-section">
-                <div class="logo">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="2" y="7" width="20" height="15" rx="2" ry="2"></rect>
-                        <polyline points="17 2 12 7 7 2"></polyline>
-                    </svg>
-                </div>
-                <h1>ScanFlow</h1>
-            </div>
-            <div class="header-actions">
-                <a href="{% url 'staff:dashboard' %}" class="back-link">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M19 12H5M12 19l-7-7 7-7"/>
-                    </svg>
-                    <span>Back to Dashboard</span>
-                </a>
-                <div class="date">{% now "F j, Y" %}</div>
-            </div>
-        </header>
+{% extends 'staff/base.html' %}
 
-        <div class="page-title">
-            <h2>Room Check-In Process</h2>
-            <p>Complete the form below to begin the check-in process</p>
+{% block title %}Room Check-In - ScanFlow{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Reset background to match base template */
+    .main-content {
+        background-color: var(--background-color);
+        padding-top: 1rem;
+    }
+    
+    /* Compact progress indicator */
+    .progress-container {
+        max-width: 500px;
+        margin: 0 auto 1.5rem;
+    }
+    
+    .progress-steps {
+        display: flex;
+        justify-content: space-between;
+        position: relative;
+        z-index: 1;
+    }
+    
+    .progress-steps::before {
+        content: '';
+        position: absolute;
+        top: 14px;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        background-color: rgba(0,0,0,0.1);
+        z-index: -1;
+    }
+    
+    .progress-steps::after {
+        content: '';
+        position: absolute;
+        top: 14px;
+        left: 0;
+        width: 25%;
+        height: 2px;
+        background-color: var(--primary-color);
+        z-index: -1;
+    }
+    
+    .step {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        width: 60px;
+    }
+    
+    .step-circle {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background-color: #fff;
+        border: 2px solid rgba(0,0,0,0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 0.25rem;
+        font-weight: 600;
+        font-size: 0.75rem;
+        color: rgba(0,0,0,0.5);
+    }
+    
+    .step.active .step-circle {
+        background-color: var(--primary-color);
+        border-color: var(--text-color);
+        color: var(--text-color);
+    }
+    
+    .step-title {
+        font-size: 0.7rem;
+        font-weight: 500;
+        color: rgba(0,0,0,0.6);
+    }
+    
+    /* Compact page title */
+    .page-title {
+        text-align: center;
+        margin-bottom: 1rem;
+    }
+    
+    .page-title h2 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 0.25rem;
+    }
+    
+    .page-title p {
+        font-size: 0.875rem;
+        color: rgba(0,0,0,0.6);
+        margin: 0 auto;
+    }
+    
+    /* Compact grid layout */
+    .content-container {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 0 1rem;
+    }
+    
+    .content-grid {
+        display: grid;
+        grid-template-columns: 3fr 4fr;
+        gap: 1.25rem;
+        align-items: stretch;
+    }
+    
+    /* Compact card styling */
+    .info-cards {
+        display: grid;
+        grid-template-rows: 1fr 1fr;
+        gap: 1rem;
+        height: 100%;
+    }
+    
+    .info-card, .check-in-form-card {
+        background-color: #FFFFFF;
+        border-radius: 10px;
+        border: 1px solid rgba(21, 22, 22, 0.1);
+        box-shadow: 3px 3px 0px 0px rgba(21, 22, 22, 0.1);
+        overflow: hidden;
+        height: 100%;
+    }
+    
+    .info-card {
+        padding: 1rem;
+        display: flex;
+        gap: 0.75rem;
+        align-items: flex-start;
+    }
+    
+    .card-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        background-color: rgba(214, 243, 47, 0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        border: 1px solid rgba(21, 22, 22, 0.2);
+    }
+    
+    .card-icon svg {
+        width: 18px;
+        height: 18px;
+    }
+    
+    .camera-icon {
+        background-color: rgba(97, 106, 229, 0.15);
+    }
+    
+    .card-content h3 {
+        font-size: 1rem;
+        margin-bottom: 0.35rem;
+        font-weight: 600;
+    }
+    
+    .card-content p {
+        color: rgba(0,0,0,0.6);
+        font-size: 0.8125rem;
+        line-height: 1.4;
+        margin: 0;
+    }
+    
+    /* Form card styling */
+    .check-in-form-card .card-header {
+        padding: 0.75rem 1.25rem;
+        border-bottom: 1px solid rgba(0,0,0,0.1);
+        background-color: #fafafa;
+    }
+    
+    .card-header h2 {
+        font-size: 1.125rem;
+        font-weight: 600;
+        margin: 0;
+    }
+    
+    .check-in-form-card .card-body {
+        padding: 1.25rem;
+    }
+    
+    .check-in-form {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    /* Form elements */
+    .form-field {
+        margin-bottom: 1rem;
+    }
+    
+    .form-field:last-child {
+        margin-bottom: 0;
+    }
+    
+    .form-field label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 0.4rem;
+        font-size: 0.875rem;
+        color: var(--text-color);
+    }
+    
+    /* Input icon styling */
+    .input-with-icon {
+        position: relative;
+    }
+    
+    .input-with-icon svg {
+        position: absolute;
+        left: 0.75rem;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 1rem;
+        height: 1rem;
+        color: rgba(0,0,0,0.4);
+    }
+    
+    .input-with-icon select,
+    .input-with-icon textarea {
+        width: 100%;
+        padding: 0.625rem 1rem 0.625rem 2.25rem;
+        border-radius: 8px;
+        border: 1px solid rgba(0,0,0,0.15);
+        background-color: #fff;
+        font-size: 0.875rem;
+        transition: all 0.2s ease;
+        font-family: inherit;
+        color: var(--text-color);
+    }
+    
+    .input-with-icon select {
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23333' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 0.75rem center;
+        background-size: 0.875rem;
+        padding-right: 2rem;
+    }
+    
+    .input-with-icon textarea {
+        min-height: 100px;
+        resize: vertical;
+    }
+    
+    .input-with-icon select:focus,
+    .input-with-icon textarea:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 2px rgba(214, 243, 47, 0.25);
+    }
+    
+    /* Fixed textarea icon position */
+    .input-with-icon.textarea-icon svg {
+        top: 1rem;
+        transform: none;
+    }
+    
+    /* Form help text */
+    .form-help {
+        font-size: 0.75rem;
+        color: rgba(0,0,0,0.5);
+        margin-top: 0.35rem;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+    
+    .form-help svg {
+        width: 12px;
+        height: 12px;
+        flex-shrink: 0;
+    }
+    
+    /* Button styling */
+    .form-actions {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 0.75rem;
+    }
+    
+    .btn-primary {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1.25rem;
+        background-color: var(--primary-color);
+        border: 1px solid var(--text-color);
+        border-radius: 8px;
+        box-shadow: 2px 2px 0px var(--text-color);
+        font-weight: 600;
+        font-size: 0.875rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .btn-primary:hover {
+        transform: translate(1px, 1px);
+        box-shadow: 1px 1px 0px var(--text-color);
+    }
+    
+    .btn-primary svg {
+        width: 16px;
+        height: 16px;
+    }
+    
+    /* Responsive design */
+    @media (max-width: 768px) {
+        .content-grid {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+        
+        .info-cards {
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: auto;
+        }
+        
+        .step-title {
+            display: none;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .info-cards {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="content-container">
+    <!-- Compact progress indicator -->
+    <div class="progress-container">
+        <div class="progress-steps">
+            <div class="step active">
+                <div class="step-circle">1</div>
+                <div class="step-title">Selection</div>
+            </div>
+            <div class="step">
+                <div class="step-circle">2</div>
+                <div class="step-title">Photos</div>
+            </div>
+            <div class="step">
+                <div class="step-circle">3</div>
+                <div class="step-title">Verify</div>
+            </div>
+            <div class="step">
+                <div class="step-circle">4</div>
+                <div class="step-title">Complete</div>
+            </div>
         </div>
+    </div>
 
-        {% if messages %}
-        <div class="messages-container">
-            {% for message in messages %}
-            <div class="alert alert-{{ message.tags }}">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                </svg>
-                <span>{{ message }}</span>
-            </div>
-            {% endfor %}
-        </div>
-        {% endif %}
+    <div class="page-title">
+        <h2>Room Check-In Process</h2>
+        <p>Select a room and add notes about its condition</p>
+    </div>
 
-        <div class="content-grid">
+    <div class="content-grid">
+        <div class="info-cards">
             <div class="info-card">
                 <div class="card-icon">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -61,60 +378,8 @@
                     </svg>
                 </div>
                 <div class="card-content">
-                    <h3>Instructions</h3>
-                    <p>Select a room from the dropdown, add any notes about the room's condition, then click continue to proceed to the photo upload step.</p>
-                </div>
-            </div>
-
-            <div class="check-in-form-card">
-                <div class="card-header">
-                    <h2>Room Selection</h2>
-                </div>
-                <div class="card-body">
-                    <form method="post" class="check-in-form">
-                        {% csrf_token %}
-                        
-                        <div class="form-row">
-                            <div class="form-field">
-                                <label for="{{ form.room_id.id_for_label }}">Select Room</label>
-                                <div class="input-with-icon">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-                                        <polyline points="9 22 9 12 15 12 15 22"></polyline>
-                                    </svg>
-                                    {{ form.room_id }}
-                                </div>
-                                <div class="form-help">Choose the room you want to check in</div>
-                            </div>
-                        </div>
-
-                        <div class="form-row">
-                            <div class="form-field">
-                                <label for="{{ form.notes.id_for_label }}">Room Notes</label>
-                                <div class="input-with-icon">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                                        <polyline points="14 2 14 8 20 8"></polyline>
-                                        <line x1="16" y1="13" x2="8" y2="13"></line>
-                                        <line x1="16" y1="17" x2="8" y2="17"></line>
-                                        <polyline points="10 9 9 9 8 9"></polyline>
-                                    </svg>
-                                    {{ form.notes }}
-                                </div>
-                                <div class="form-help">Optional: Add any notes about the room's condition</div>
-                            </div>
-                        </div>
-
-                        <div class="form-actions">
-                            <button type="submit" class="btn-primary">
-                                <span>Continue to Photo Upload</span>
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M5 12h14"></path>
-                                    <path d="M12 5l7 7-7 7"></path>
-                                </svg>
-                            </button>
-                        </div>
-                    </form>
+                    <h3>How It Works</h3>
+                    <p>This 4-step process helps document room condition. Select a room, upload photos, verify inventory, and complete your check-in.</p>
                 </div>
             </div>
 
@@ -126,346 +391,74 @@
                     </svg>
                 </div>
                 <div class="card-content">
-                    <h3>Next Step: Photo Upload</h3>
-                    <p>After selecting a room, you'll be asked to upload photos of the room for inventory verification.</p>
+                    <h3>Next: Photo Upload</h3>
+                    <p>After selecting a room, you'll take photos to document its condition for inventory verification.</p>
                 </div>
             </div>
         </div>
-    </main>
+
+        <div class="check-in-form-card">
+            <div class="card-header">
+                <h2>Room Selection</h2>
+            </div>
+            <div class="card-body">
+                <form method="post" class="check-in-form">
+                    {% csrf_token %}
+                    
+                    <div class="form-field">
+                        <label for="{{ form.room_id.id_for_label }}">Select Room</label>
+                        <div class="input-with-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                            </svg>
+                            {{ form.room_id }}
+                        </div>
+                        <div class="form-help">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                            </svg>
+                            <span>Choose the room you want to check in</span>
+                        </div>
+                    </div>
+
+                    <div class="form-field">
+                        <label for="{{ form.notes.id_for_label }}">Room Notes</label>
+                        <div class="input-with-icon textarea-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                                <polyline points="10 9 9 9 8 9"></polyline>
+                            </svg>
+                            {{ form.notes }}
+                        </div>
+                        <div class="form-help">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                            </svg>
+                            <span>Describe pre-existing conditions or damages</span>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn-primary">
+                            <span>Continue to Photo Upload</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M5 12h14"></path>
+                                <path d="M12 5l7 7-7 7"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 </div>
 
-<style>
-:root {
-    --primary-color: #D6F32F;
-    --text-color: #151616;
-    --background-color: #f5f5f5;
-    --card-bg: #ffffff;
-    --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    --border-radius: 10px;
-    --transition: all 0.3s ease;
-}
-
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
-body {
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-    background-color: var(--background-color);
-    color: var(--text-color);
-    line-height: 1.6;
-}
-
-.app-container {
-    min-height: 100vh;
-}
-
-/* Header Styles */
-.main-content {
-    width: 100%;
-    max-width: 1280px;
-    margin: 0 auto;
-    padding: 2rem;
-}
-
-.header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 2rem;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid rgba(0,0,0,0.1);
-}
-
-.logo-section {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-}
-
-.logo {
-    width: 40px;
-    height: 40px;
-    background-color: var(--primary-color);
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 2px 2px 0px var(--text-color);
-    border: 1px solid var(--text-color);
-}
-
-.logo-section h1 {
-    font-size: 1.5rem;
-    font-weight: 700;
-}
-
-.header-actions {
-    display: flex;
-    gap: 1.5rem;
-    align-items: center;
-}
-
-.back-link {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    text-decoration: none;
-    color: var(--text-color);
-    font-weight: 500;
-    font-size: 0.875rem;
-    padding: 0.5rem 0.75rem;
-    border-radius: var(--border-radius);
-    background-color: rgba(214, 243, 47, 0.2);
-    transition: var(--transition);
-}
-
-.back-link:hover {
-    background-color: rgba(214, 243, 47, 0.4);
-}
-
-.date {
-    font-size: 0.875rem;
-    color: rgba(0,0,0,0.6);
-}
-
-.page-title {
-    text-align: center;
-    margin-bottom: 2.5rem;
-}
-
-.page-title h2 {
-    font-size: 2rem;
-    font-weight: 700;
-    margin-bottom: 0.5rem;
-}
-
-.page-title p {
-    font-size: 1rem;
-    color: rgba(0,0,0,0.6);
-}
-
-.messages-container {
-    margin-bottom: 2rem;
-}
-
-.alert {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    padding: 1rem;
-    border-radius: var(--border-radius);
-    margin-bottom: 1rem;
-}
-
-.alert-success {
-    background-color: rgba(0, 200, 83, 0.1);
-    border: 1px solid rgba(0, 200, 83, 0.5);
-}
-
-.alert-error {
-    background-color: rgba(255, 76, 76, 0.1);
-    border: 1px solid rgba(255, 76, 76, 0.5);
-}
-
-.content-grid {
-    display: grid;
-    grid-template-columns: 1fr 1.5fr 1fr;
-    gap: 1.5rem;
-}
-
-.info-card, .check-in-form-card {
-    background-color: var(--card-bg);
-    border-radius: var(--border-radius);
-    box-shadow: var(--shadow);
-    overflow: hidden;
-}
-
-.info-card {
-    padding: 1.5rem;
-    display: flex;
-    gap: 1rem;
-    align-items: flex-start;
-}
-
-.card-icon {
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    background-color: rgba(214, 243, 47, 0.2);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
-
-.camera-icon {
-    background-color: rgba(97, 106, 229, 0.2);
-}
-
-.card-content h3 {
-    font-size: 1.25rem;
-    margin-bottom: 0.5rem;
-}
-
-.card-content p {
-    color: rgba(0,0,0,0.6);
-    font-size: 0.875rem;
-}
-
-.check-in-form-card .card-header {
-    padding: 1.5rem;
-    border-bottom: 1px solid rgba(0,0,0,0.1);
-}
-
-.card-header h2 {
-    font-size: 1.5rem;
-    font-weight: 600;
-}
-
-.check-in-form-card .card-body {
-    padding: 1.5rem;
-}
-
-.check-in-form {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-}
-
-.form-row {
-    display: flex;
-    gap: 1.5rem;
-}
-
-.form-field {
-    flex: 1;
-}
-
-.form-field label {
-    display: block;
-    font-weight: 500;
-    margin-bottom: 0.5rem;
-    font-size: 0.875rem;
-}
-
-.input-with-icon {
-    position: relative;
-}
-
-.input-with-icon svg {
-    position: absolute;
-    left: 0.875rem;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 1.25rem;
-    height: 1.25rem;
-    color: rgba(0,0,0,0.4);
-}
-
-.input-with-icon select,
-.input-with-icon textarea {
-    width: 100%;
-    padding: 0.75rem 1rem 0.75rem 2.75rem;
-    border-radius: var(--border-radius);
-    border: 1px solid rgba(0,0,0,0.2);
-    background-color: #fff;
-    font-size: 1rem;
-    transition: var(--transition);
-}
-
-.input-with-icon textarea {
-    padding-top: 2.25rem;
-    min-height: 120px;
-    resize: vertical;
-}
-
-.input-with-icon select:focus,
-.input-with-icon textarea:focus {
-    outline: none;
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 2px rgba(214, 243, 47, 0.3);
-}
-
-.form-help {
-    font-size: 0.75rem;
-    color: rgba(0,0,0,0.6);
-    margin-top: 0.5rem;
-}
-
-.form-actions {
-    display: flex;
-    justify-content: flex-end;
-    margin-top: 1rem;
-}
-
-.btn-primary {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.75rem 1.5rem;
-    background-color: var(--primary-color);
-    border: 1px solid var(--text-color);
-    border-radius: var(--border-radius);
-    box-shadow: 2px 2px 0px var(--text-color);
-    font-weight: 600;
-    font-size: 0.875rem;
-    cursor: pointer;
-    transition: var(--transition);
-}
-
-.btn-primary:hover {
-    transform: translate(1px, 1px);
-    box-shadow: 1px 1px 0px var(--text-color);
-}
-
-@media (max-width: 1200px) {
-    .content-grid {
-        grid-template-columns: 1fr 1fr;
-    }
-    
-    .info-card:last-child {
-        grid-column: span 2;
-    }
-}
-
-@media (max-width: 768px) {
-    .content-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .info-card:last-child {
-        grid-column: 1;
-    }
-    
-    .header {
-        flex-direction: column;
-        align-items: center;
-        gap: 1rem;
-        text-align: center;
-    }
-    
-    .header-actions {
-        flex-direction: column;
-        align-items: center;
-    }
-}
-
-@media (max-width: 480px) {
-    .main-content {
-        padding: 1rem;
-    }
-    
-    .form-row {
-        flex-direction: column;
-    }
-    
-    .page-title h2 {
-        font-size: 1.5rem;
-    }
-}
-</style>
-</body>
-</html> 
+{% endblock %} 

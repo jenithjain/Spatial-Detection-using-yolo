@@ -1,19 +1,431 @@
 {% extends 'staff/base.html' %}
 
+{% block title %}{% if detection_type == 'checkin' %}Room Check-In Photos{% else %}Room Check-Out Photos{% endif %} - ScanFlow{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Main container styles */
+    .content-container {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 0 1rem;
+    }
+    
+    /* Progress indicator */
+    .progress-container {
+        max-width: 500px;
+        margin: 0 auto 1.5rem;
+    }
+    
+    .progress-steps {
+        display: flex;
+        justify-content: space-between;
+        position: relative;
+        z-index: 1;
+    }
+    
+    .progress-steps::before {
+        content: '';
+        position: absolute;
+        top: 14px;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        background-color: rgba(0,0,0,0.1);
+        z-index: -1;
+    }
+    
+    .progress-steps::after {
+        content: '';
+        position: absolute;
+        top: 14px;
+        left: 0;
+        width: 50%;
+        height: 2px;
+        background-color: var(--primary-color);
+        z-index: -1;
+    }
+    
+    .step {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        width: 60px;
+    }
+    
+    .step-circle {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background-color: #fff;
+        border: 2px solid rgba(0,0,0,0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 0.25rem;
+        font-weight: 600;
+        font-size: 0.75rem;
+        color: rgba(0,0,0,0.5);
+    }
+    
+    .step.active .step-circle {
+        background-color: var(--primary-color);
+        border-color: var(--text-color);
+        color: var(--text-color);
+    }
+    
+    .step.completed .step-circle {
+        background-color: var(--primary-color);
+        border-color: var(--text-color);
+        color: var(--text-color);
+    }
+    
+    .step-title {
+        font-size: 0.7rem;
+        font-weight: 500;
+        color: rgba(0,0,0,0.6);
+    }
+    
+    /* Page title */
+    .page-title {
+        text-align: center;
+        margin-bottom: 1rem;
+    }
+    
+    .page-title h2 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 0.25rem;
+    }
+    
+    .page-title p {
+        font-size: 0.875rem;
+        color: rgba(0,0,0,0.6);
+    }
+    
+    /* Card styles */
+    .card {
+        background-color: #FFFFFF;
+        border-radius: 10px;
+        border: 1px solid rgba(21, 22, 22, 0.1);
+        box-shadow: 3px 3px 0px 0px rgba(21, 22, 22, 0.1);
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+    }
+    
+    .card-header {
+        padding: 0.75rem 1.25rem;
+        border-bottom: 1px solid rgba(0,0,0,0.1);
+        background-color: #fafafa;
+    }
+    
+    .card-header h3 {
+        font-size: 1.125rem;
+        font-weight: 600;
+        margin: 0;
+        color: var(--text-color);
+    }
+    
+    .card-body {
+        padding: 1.25rem;
+    }
+    
+    .card-body p {
+        font-size: 0.875rem;
+        color: rgba(0,0,0,0.7);
+        margin-bottom: 1rem;
+    }
+    
+    /* Form elements */
+    .form-group {
+        margin-bottom: 1rem;
+    }
+    
+    .form-label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 0.4rem;
+        font-size: 0.875rem;
+        color: var(--text-color);
+    }
+    
+    .form-control {
+        width: 100%;
+        padding: 0.625rem 1rem;
+        border-radius: 8px;
+        border: 1px solid rgba(0,0,0,0.15);
+        background-color: #fff;
+        font-size: 0.875rem;
+        transition: all 0.2s ease;
+        font-family: inherit;
+        color: var(--text-color);
+    }
+    
+    .form-control:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 2px rgba(214, 243, 47, 0.25);
+    }
+    
+    /* Button styles */
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1.25rem;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.875rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-decoration: none;
+    }
+    
+    .btn-primary {
+        background-color: var(--primary-color);
+        border: 1px solid var(--text-color);
+        color: var(--text-color);
+        box-shadow: 2px 2px 0px var(--text-color);
+    }
+    
+    .btn-primary:hover {
+        transform: translate(1px, 1px);
+        box-shadow: 1px 1px 0px var(--text-color);
+    }
+    
+    .btn-secondary {
+        background-color: #f5f5f5;
+        border: 1px solid rgba(0,0,0,0.2);
+        color: rgba(0,0,0,0.8);
+    }
+    
+    .btn-secondary:hover {
+        background-color: #ebebeb;
+    }
+    
+    .btn-success {
+        background-color: #D6F32F;
+        color: var(--text-color);
+        border: 1px solid var(--text-color);
+        box-shadow: 2px 2px 0px var(--text-color);
+    }
+    
+    .btn-success:hover {
+        transform: translate(1px, 1px);
+        box-shadow: 1px 1px 0px var(--text-color);
+    }
+    
+    .btn-warning {
+        background-color: #FFC107;
+        color: var(--text-color);
+        border: 1px solid var(--text-color);
+    }
+    
+    .btn-warning:hover {
+        background-color: #e6ae06;
+    }
+    
+    /* Loading spinner */
+    .spinner {
+        display: inline-block;
+        width: 2rem;
+        height: 2rem;
+        border: 0.25rem solid rgba(0,0,0,0.1);
+        border-radius: 50%;
+        border-top-color: var(--primary-color);
+        animation: spin 1s ease-in-out infinite;
+    }
+    
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+    
+    /* Result section */
+    .result-image-container {
+        text-align: center;
+        margin: 1rem 0;
+    }
+    
+    .result-image {
+        max-height: 400px;
+        border-radius: 8px;
+        border: 1px solid rgba(0,0,0,0.1);
+    }
+    
+    .section-title {
+        font-size: 1.125rem;
+        font-weight: 600;
+        margin-bottom: 0.75rem;
+        color: var(--text-color);
+    }
+    
+    .object-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .object-badge {
+        background-color: rgba(214, 243, 47, 0.3);
+        color: var(--text-color);
+        padding: 0.35rem 0.75rem;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+    
+    /* Table styles */
+    .table-container {
+        overflow-x: auto;
+        margin-bottom: 1.5rem;
+    }
+    
+    .table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.875rem;
+    }
+    
+    .table th, .table td {
+        padding: 0.75rem;
+        text-align: left;
+        border: 1px solid rgba(0,0,0,0.1);
+    }
+    
+    .table th {
+        background-color: #f5f5f5;
+        font-weight: 600;
+    }
+    
+    /* Status badges */
+    .badge {
+        display: inline-block;
+        padding: 0.35rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+    
+    .badge-success {
+        background-color: rgba(40, 167, 69, 0.15);
+        color: #28a745;
+    }
+    
+    .badge-danger {
+        background-color: rgba(220, 53, 69, 0.15);
+        color: #dc3545;
+    }
+    
+    .badge-warning {
+        background-color: rgba(255, 193, 7, 0.15);
+        color: #856404;
+    }
+    
+    .badge-info {
+        background-color: rgba(23, 162, 184, 0.15);
+        color: #17a2b8;
+    }
+    
+    /* Alert styles */
+    .alert {
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 1.5rem;
+        border-left: 4px solid;
+    }
+    
+    .alert-title {
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .alert-success {
+        background-color: rgba(40, 167, 69, 0.1);
+        border-left-color: #28a745;
+    }
+    
+    .alert-danger {
+        background-color: rgba(220, 53, 69, 0.1);
+        border-left-color: #dc3545;
+    }
+    
+    .alert-list {
+        margin: 0.5rem 0 0 1.25rem;
+        padding: 0;
+    }
+    
+    .alert-list li {
+        margin-bottom: 0.25rem;
+    }
+    
+    /* Button container */
+    .button-container {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 1.5rem;
+    }
+    
+    /* Responsive design */
+    @media (max-width: 768px) {
+        .step-title {
+            display: none;
+        }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container mt-4">
-    <div class="card shadow">
-        <div class="card-header bg-primary text-white">
-            <h4 class="mb-0">
+<div class="content-container">
+    <!-- Progress indicator -->
+    <div class="progress-container">
+        <div class="progress-steps">
+            <div class="step completed">
+                <div class="step-circle">1</div>
+                <div class="step-title">Selection</div>
+            </div>
+            <div class="step active">
+                <div class="step-circle">2</div>
+                <div class="step-title">Photos</div>
+            </div>
+            <div class="step">
+                <div class="step-circle">3</div>
+                <div class="step-title">Verify</div>
+            </div>
+            <div class="step">
+                <div class="step-circle">4</div>
+                <div class="step-title">Complete</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="page-title">
+        <h2>
+            {% if detection_type == 'checkin' %}
+            Room Check-In Photos
+            {% else %}
+            Room Check-Out Photos
+            {% endif %}
+        </h2>
+        <p>Room {{ room_number }}</p>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3>
                 {% if detection_type == 'checkin' %}
-                Upload Check-In Image - Room {{ room_number }}
+                Upload Room Photo
                 {% else %}
-                Upload Check-Out Image - Room {{ room_number }}
+                Upload Check-Out Photo
                 {% endif %}
-            </h4>
+            </h3>
         </div>
         <div class="card-body">
-            <p class="lead">
+            <p>
                 {% if detection_type == 'checkin' %}
                 Please take a photo of the room during check-in. Our system will analyze the image to detect furniture and objects in the room.
                 {% else %}
@@ -21,8 +433,8 @@
                 {% endif %}
             </p>
 
-            <div id="uploadSection" class="mt-4">
-                <form id="uploadForm" class="mb-4">
+            <div id="uploadSection">
+                <form id="uploadForm">
                     <input type="hidden" id="sessionId" value="{{ session_id }}">
                     <input type="hidden" id="detectionType" value="{{ detection_type }}">
                     <input type="hidden" id="roomNumber" value="{{ room_number }}">
@@ -34,37 +446,40 @@
                         <input type="file" class="form-control" id="imageInput" accept="image/*" required>
                     </div>
                     
-                    <button type="submit" class="btn btn-primary mt-3">
-                        <i class="fas fa-upload"></i> Upload Image
+                    <button type="submit" class="btn btn-primary">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                        Upload Image
                     </button>
                 </form>
             </div>
 
-            <div id="loadingSection" style="display: none;" class="text-center my-4">
-                <div class="spinner-border text-primary" role="status">
-                    <span class="visually-hidden">Loading...</span>
-                </div>
-                <p class="mt-2">Processing image, please wait...</p>
+            <div id="loadingSection" style="display: none;" class="text-center">
+                <div class="spinner"></div>
+                <p>Processing image, please wait...</p>
             </div>
 
-            <div id="resultSection" style="display: none;" class="mt-4">
-                <h4 class="mb-3">Processing Results</h4>
-                <div class="text-center">
-                    <img id="resultImage" class="img-fluid rounded border" style="max-height: 400px;">
+            <div id="resultSection" style="display: none;">
+                <h4 class="section-title">Processing Results</h4>
+                <div class="result-image-container">
+                    <img id="resultImage" class="result-image">
                 </div>
                 
-                <div id="detectionDetails" class="mt-3">
-                    <h5>Detected Objects:</h5>
-                    <div id="objectList" class="d-flex flex-wrap gap-2 mb-3">
+                <div id="detectionDetails">
+                    <h5 class="section-title">Detected Objects:</h5>
+                    <div id="objectList" class="object-list">
                         <!-- Objects will be listed here -->
                     </div>
                     
                     <!-- Inventory Comparison Section (for check-in) -->
-                    <div id="inventoryComparisonSection" style="display: none;" class="mt-4">
-                        <h5 class="mb-3">Room Inventory Comparison:</h5>
-                        <div class="table-responsive">
-                            <table class="table table-bordered">
-                                <thead class="table-light">
+                    <div id="inventoryComparisonSection" style="display: none;">
+                        <h5 class="section-title">Room Inventory Comparison:</h5>
+                        <div class="table-container">
+                            <table class="table">
+                                <thead>
                                     <tr>
                                         <th>Item</th>
                                         <th>Expected</th>
@@ -78,41 +493,72 @@
                             </table>
                         </div>
                         
-                        <div id="inventoryMatchAlert" class="alert alert-success mt-3" style="display: none;">
-                            <h6><i class="fas fa-check-circle"></i> <strong>Inventory Match</strong></h6>
-                            <p class="mb-0">All expected items have been detected. You can proceed with the check-in.</p>
+                        <div id="inventoryMatchAlert" class="alert alert-success" style="display: none;">
+                            <div class="alert-title">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                                </svg>
+                                Inventory Match
+                            </div>
+                            <p>All expected items have been detected. You can proceed with the check-in.</p>
                         </div>
                         
-                        <div id="inventoryMismatchAlert" class="alert alert-danger mt-3" style="display: none;">
-                            <h6><i class="fas fa-exclamation-triangle"></i> <strong>Inventory Mismatch</strong></h6>
-                            <p class="mb-0">Some expected items were not detected in the room. Please verify that:</p>
-                            <ul class="mt-2 mb-0">
+                        <div id="inventoryMismatchAlert" class="alert alert-danger" style="display: none;">
+                            <div class="alert-title">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                                </svg>
+                                Inventory Mismatch
+                            </div>
+                            <p>Some expected items were not detected in the room. Please verify that:</p>
+                            <ul class="alert-list">
                                 <li>All required furniture is present in the room</li>
                                 <li>All items are clearly visible in the photo</li>
                                 <li>The lighting is adequate for object detection</li>
                             </ul>
-                            <p class="mt-2 mb-0">Use the "Try Another Image" button to upload a new photo.</p>
+                            <p>Use the "Try Another Image" button to upload a new photo.</p>
                         </div>
                     </div>
                 </div>
 
-                <div class="d-flex justify-content-between mt-4">
+                <div class="button-container">
                     {% if detection_type == 'checkin' %}
                     <a href="{% url 'staff:dashboard' %}" class="btn btn-secondary">
-                        <i class="fas fa-arrow-left"></i> Back to Dashboard
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 12H5M12 19l-7-7 7-7"/>
+                        </svg>
+                        Back to Dashboard
                     </a>
                     <button id="retryButton" class="btn btn-warning" style="display: none;">
-                        <i class="fas fa-redo"></i> Try Another Image
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M1 4v6h6"/>
+                            <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+                        </svg>
+                        Try Another Image
                     </button>
                     <a id="continueBtn" href="{% url 'staff:dashboard' %}" class="btn btn-success" style="display: none;">
-                        <i class="fas fa-check"></i> Complete Check-In
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M5 12h14M12 5l7 7-7 7"/>
+                        </svg>
+                        Complete Check-In
                     </a>
                     {% else %}
                     <a href="{% url 'staff:dashboard' %}" class="btn btn-secondary">
-                        <i class="fas fa-arrow-left"></i> Back to Dashboard
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 12H5M12 19l-7-7 7-7"/>
+                        </svg>
+                        Back to Dashboard
                     </a>
                     <a id="compareBtn" href="#" class="btn btn-primary">
-                        <i class="fas fa-sync-alt"></i> View Comparison
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="1 4 1 10 7 10"></polyline>
+                            <polyline points="23 20 23 14 17 14"></polyline>
+                            <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"></path>
+                        </svg>
+                        View Comparison
                     </a>
                     {% endif %}
                 </div>
@@ -195,7 +641,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 for (const [object, count] of Object.entries(objectCounts)) {
                     const objectBadge = document.createElement('span');
-                    objectBadge.className = 'badge bg-info text-dark p-2';
+                    objectBadge.className = 'object-badge';
                     objectBadge.textContent = `${object}: ${count}`;
                     objectList.appendChild(objectBadge);
                 }
@@ -229,15 +675,15 @@ document.addEventListener('DOMContentLoaded', function() {
                         // Status
                         const statusCell = document.createElement('td');
                         if (details.extra) {
-                            statusCell.innerHTML = '<span class="badge bg-info">Extra Item</span>';
+                            statusCell.innerHTML = '<span class="badge badge-info">Extra Item</span>';
                             hasExtraItems = true;
                         } else if (details.match) {
-                            statusCell.innerHTML = '<span class="badge bg-success">Match</span>';
+                            statusCell.innerHTML = '<span class="badge badge-success">Match</span>';
                         } else if (details.detected === 0) {
-                            statusCell.innerHTML = '<span class="badge bg-danger">Not Detected</span>';
+                            statusCell.innerHTML = '<span class="badge badge-danger">Not Detected</span>';
                             allItemsDetected = false;
                         } else if (details.detected < details.expected) {
-                            statusCell.innerHTML = '<span class="badge bg-warning text-dark">Partially Detected</span>';
+                            statusCell.innerHTML = '<span class="badge badge-warning">Partially Detected</span>';
                             allItemsDetected = false;
                         }
                         row.appendChild(statusCell);
