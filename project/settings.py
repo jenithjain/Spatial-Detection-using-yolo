@@ -25,7 +25,10 @@ SECRET_KEY = 'django-insecure--g+309iy&mgr%865^zv6ahaxxa2_5ho2r47r4el$6613w=bi3i
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'totally-unbiased-aphid.ngrok-free.app']
+
+# CSRF settings
+CSRF_TRUSTED_ORIGINS = ['https://totally-unbiased-aphid.ngrok-free.app']
 
 
 # Application definition
