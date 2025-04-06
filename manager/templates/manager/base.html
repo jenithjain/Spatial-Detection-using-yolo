@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Manager Portal{% endblock %}</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+    
+    <style>
+        :root {
+            --primary-color: #4E31AA;
+            --text-color: #151616;
+            --background-color: #F8F9FE;
+            --card-background: #FFFFFF;
+            --sidebar-width: 280px;
+            --shadow-sm: 4px 4px 0px 0px rgba(78, 49, 170, 0.1);
+            --shadow-hover: 6px 6px 0px 0px rgba(78, 49, 170, 0.15);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.5;
+        }
+
+        .dashboard-container {
+            display: flex;
+            min-height: 100vh;
+            background-color: var(--background-color);
+        }
+
+        .sidebar {
+            width: var(--sidebar-width);
+            background-color: var(--card-background);
+            padding: 2rem 1.5rem;
+            border-right: 1px solid rgba(78, 49, 170, 0.1);
+            position: fixed;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            gap: 3rem;
+            z-index: 50;
+        }
+
+        .sidebar-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-right: 0.5rem;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .logo {
+            width: 42px;
+            height: 42px;
+            background-color: var(--primary-color);
+            border-radius: 12px;
+            border: 2px solid var(--text-color);
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .logo i {
+            font-size: 24px;
+            color: #FFFFFF;
+        }
+
+        .logo-container h1 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-color);
+        }
+
+        .nav-menu {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.875rem 1rem;
+            text-decoration: none;
+            color: var(--text-color);
+            border-radius: 12px;
+            transition: all 0.2s ease;
+            font-weight: 500;
+            font-size: 0.9375rem;
+        }
+
+        .nav-item i {
+            font-size: 1.5rem;
+            opacity: 0.9;
+        }
+
+        .nav-item:hover {
+            background-color: rgba(78, 49, 170, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .nav-item.active {
+            background-color: var(--primary-color);
+            color: #FFFFFF;
+            border: none;
+            box-shadow: var(--shadow-sm);
+            font-weight: 600;
+        }
+
+        .nav-item.active i {
+            color: #FFFFFF;
+        }
+
+        .main-content {
+            margin-left: var(--sidebar-width);
+            flex: 1;
+            padding: 2rem 2.5rem;
+            background-color: var(--background-color);
+        }
+
+        .bottom-menu {
+            margin-top: auto;
+            border-top: 1px solid rgba(78, 49, 170, 0.1);
+            padding-top: 1rem;
+        }
+
+        .bottom-menu .nav-item {
+            opacity: 0.8;
+        }
+
+        .bottom-menu .nav-item:hover {
+            opacity: 1;
+        }
+
+        /* Card Styles */
+        .card {
+            background: var(--card-background);
+            border-radius: 16px;
+            border: 1px solid rgba(78, 49, 170, 0.1);
+            box-shadow: var(--shadow-sm);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .card-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid rgba(78, 49, 170, 0.1);
+        }
+
+        .card-body {
+            padding: 1.5rem;
+        }
+
+        /* Alert Styles */
+        .alert {
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+            border: 1px solid transparent;
+        }
+
+        .alert-success {
+            background-color: rgba(46, 204, 113, 0.1);
+            border-color: rgba(46, 204, 113, 0.2);
+            color: #27ae60;
+        }
+
+        .alert-info {
+            background-color: rgba(52, 152, 219, 0.1);
+            border-color: rgba(52, 152, 219, 0.2);
+            color: #2980b9;
+        }
+
+        .alert-warning {
+            background-color: rgba(241, 196, 15, 0.1);
+            border-color: rgba(241, 196, 15, 0.2);
+            color: #f39c12;
+        }
+
+        .alert-danger {
+            background-color: rgba(231, 76, 60, 0.1);
+            border-color: rgba(231, 76, 60, 0.2);
+            color: #c0392b;
+        }
+
+        @media (max-width: 1024px) {
+            :root {
+                --sidebar-width: 240px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                left: -100%;
+                transition: left 0.3s ease;
+                width: 85%;
+                max-width: 320px;
+                z-index: 1000;
+            }
+
+            .sidebar.active {
+                left: 0;
+                box-shadow: 4px 0 8px rgba(0, 0, 0, 0.1);
+            }
+
+            .main-content {
+                margin-left: 0;
+                padding: 1rem;
+                width: 100%;
+            }
+        }
+
+        {% block extra_css %}{% endblock %}
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Overlay for mobile menu -->
+        <div class="overlay" id="overlay"></div>
+
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo-container">
+                    <div class="logo">
+                        <i class="material-icons">admin_panel_settings</i>
+                    </div>
+                    <h1>Manager Portal</h1>
+                </div>
+            </div>
+            
+            <nav class="nav-menu">
+                <a href="{% url 'manager:dashboard' %}" class="nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                    <i class="material-icons">dashboard</i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="{% url 'manager:inventory' %}" class="nav-item {% if request.resolver_match.url_name == 'inventory' %}active{% endif %}">
+                    <i class="material-icons">inventory_2</i>
+                    <span>Inventory</span>
+                </a>
+                <a href="{% url 'manager:analysis' %}" class="nav-item {% if request.resolver_match.url_name == 'analysis' %}active{% endif %}">
+                    <i class="material-icons">analytics</i>
+                    <span>Analysis</span>
+                </a>
+                <a href="{% url 'staff:register' %}" class="nav-item {% if request.resolver_match.url_name == 'staff_register' %}active{% endif %}">
+                    <i class="material-icons">group_add</i>
+                    <span>Add Staff</span>
+                </a>
+            </nav>
+
+            <nav class="nav-menu bottom-menu">
+                {% if user.is_authenticated %}
+                <a href="" class="nav-item {% if request.resolver_match.url_name == 'settings' %}active{% endif %}">
+                    <i class="material-icons">settings</i>
+                    <span>Settings</span>
+                </a>
+                <a href="{% url 'logout' %}" class="nav-item">
+                    <i class="material-icons">logout</i>
+                    <span>Logout</span>
+                </a>
+                {% endif %}
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert {% if message.tags %}alert-{{ message.tags }}{% else %}alert-info{% endif %} alert-dismissible fade show">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <script>
+        // Mobile Menu Functionality
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('overlay');
+
+        function toggleMobileMenu() {
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+            document.body.style.overflow = sidebar.classList.contains('active') ? 'hidden' : '';
+        }
+
+        overlay.addEventListener('click', toggleMobileMenu);
+
+        // Close menu on window resize (if desktop size)
+        window.addEventListener('resize', () => {
+            if (window.innerWidth > 768 && sidebar.classList.contains('active')) {
+                toggleMobileMenu();
+            }
+        });
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html> 
