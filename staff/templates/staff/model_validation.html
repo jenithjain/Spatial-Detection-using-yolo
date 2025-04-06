@@ -1,0 +1,517 @@
+{% extends 'staff/base.html' %}
+{% load static %}
+
+{% block title %}Model Validation - Staff Portal{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card {
+        background-color: var(--card-background);
+        border: 2px solid var(--text-color);
+        border-radius: 12px;
+        box-shadow: var(--shadow-sm);
+        margin-bottom: 1.5rem;
+        transition: all 0.2s ease;
+        overflow: hidden;
+    }
+
+    .card:hover {
+        box-shadow: var(--shadow-hover);
+        transform: translateY(-3px);
+    }
+
+    .card-header {
+        background-color: var(--primary-color);
+        padding: 1rem 1.5rem;
+        border-bottom: 2px solid var(--text-color);
+        font-weight: 600;
+    }
+
+    .card-body {
+        padding: 1.5rem;
+    }
+
+    .btn {
+        background-color: var(--primary-color);
+        color: var(--text-color);
+        font-weight: 600;
+        padding: 0.75rem 1.5rem;
+        border: 2px solid var(--text-color);
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: inline-block;
+        font-size: 0.9375rem;
+        text-decoration: none;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .btn:hover {
+        box-shadow: var(--shadow-hover);
+        transform: translateY(-2px);
+    }
+
+    .btn-secondary {
+        background-color: #f0f0f0;
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 0.75rem;
+        border: 2px solid rgba(21, 22, 22, 0.2);
+        border-radius: 8px;
+        transition: border-color 0.2s ease;
+        font-family: inherit;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: var(--primary-color);
+    }
+
+    label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+    }
+
+    .image-container {
+        width: 100%;
+        border-radius: 8px;
+        overflow: hidden;
+        margin: 1rem 0;
+        border: 2px solid rgba(21, 22, 22, 0.1);
+    }
+
+    .image-container img {
+        width: 100%;
+        height: auto;
+        display: block;
+    }
+
+    .results-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+    }
+
+    .missing-items {
+        background-color: #fff0f0;
+        border: 2px solid #ff6b6b;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-top: 1rem;
+    }
+
+    .missing-items h4 {
+        color: #e53e3e;
+        margin-bottom: 0.5rem;
+    }
+
+    .missing-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #ffcccc;
+    }
+
+    .missing-item:last-child {
+        border-bottom: none;
+    }
+
+    .analysis-result {
+        background-color: #f0f7ff;
+        border: 2px solid #3182ce;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-top: 1rem;
+    }
+
+    .validation-types {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .validation-type-btn {
+        flex: 1;
+        padding: 0.75rem;
+        text-align: center;
+        cursor: pointer;
+        border: 2px solid rgba(21, 22, 22, 0.2);
+        border-radius: 8px;
+        transition: all 0.2s ease;
+    }
+
+    .validation-type-btn.active {
+        background-color: var(--primary-color);
+        border-color: var(--text-color);
+        font-weight: 600;
+    }
+
+    .object-list {
+        max-height: 300px;
+        overflow-y: auto;
+        padding: 0.5rem;
+        border: 1px solid #eee;
+        border-radius: 4px;
+        background-color: #fafafa;
+    }
+
+    .object-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.5rem;
+        border-bottom: 1px solid #eee;
+    }
+
+    .object-item:last-child {
+        border-bottom: none;
+    }
+
+    .checkbox-group {
+        display: flex;
+        align-items: center;
+        margin-top: 1rem;
+        padding: 0.75rem;
+        background-color: #f5f5f5;
+        border-radius: 8px;
+    }
+
+    .checkbox-group input[type="checkbox"] {
+        margin-right: 0.75rem;
+        width: 20px;
+        height: 20px;
+    }
+
+    .showcase-item {
+        border: 2px solid #3182ce;
+        margin-bottom: 1rem;
+        padding: 1rem;
+        border-radius: 8px;
+        background-color: #f0f7ff;
+    }
+
+    .showcase-item h3 {
+        margin-bottom: 0.5rem;
+    }
+
+    .showcase-actions {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 1rem;
+    }
+
+    .showcase-actions .btn {
+        margin-left: 0.5rem;
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+    }
+
+    @media (max-width: 768px) {
+        .results-container {
+            grid-template-columns: 1fr;
+        }
+
+        .validation-types {
+            flex-direction: column;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Model Validation</h1>
+    <p>Test and validate all detection and analysis capabilities in one place</p>
+</div>
+
+{% if showcase_validations %}
+<div class="card">
+    <div class="card-header">
+        Showcase Validations
+    </div>
+    <div class="card-body">
+        <p>These are featured validation examples you can use to showcase the system's capabilities:</p>
+        
+        <div class="showcase-items">
+            {% for item in showcase_validations %}
+                <div class="showcase-item">
+                    <h3>{{ item.name|default:"Validation #"|add:item.id|stringformat:"s" }}</h3>
+                    <div>Type: {{ item.get_validation_type_display }}</div>
+                    {% if item.description %}
+                        <div>{{ item.description }}</div>
+                    {% endif %}
+                    <div>Created: {{ item.created_at|date:"M d, Y H:i" }}</div>
+                    
+                    <div class="showcase-actions">
+                        <a href="{% url 'staff:view_validation' item.id %}" class="btn">View Details</a>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        
+        <div class="mt-3">
+            <a href="{% url 'staff:validation_showcase' %}" class="btn">View Full Showcase</a>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="card">
+    <div class="card-header">
+        Upload Images for Analysis
+    </div>
+    <div class="card-body">
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            <div class="alert alert-info">
+                Upload both Check-in and Check-out images to automatically perform all three types of analysis:
+                <ul>
+                    <li><strong>Object Detection</strong> - Identifies objects in both images</li>
+                    <li><strong>Room Comparison</strong> - Analyzes differences between images</li>
+                    <li><strong>Damage Detection</strong> - Identifies potential damages in check-out image</li>
+                </ul>
+            </div>
+
+            <div class="form-group">
+                <label for="name">Name (optional)</label>
+                <input type="text" name="name" id="name" class="form-control" placeholder="Give this validation a descriptive name">
+            </div>
+
+            <div class="form-group">
+                <label for="description">Description (optional)</label>
+                <textarea name="description" id="description" class="form-control" rows="3" placeholder="Describe what you're testing with these images"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="checkin_image">Before Image (Check-in)</label>
+                <input type="file" name="checkin_image" id="checkin_image" class="form-control" accept="image/*" required>
+                <small>Upload an image taken at check-in time</small>
+            </div>
+
+            <div class="form-group">
+                <label for="checkout_image">After Image (Check-out)</label>
+                <input type="file" name="checkout_image" id="checkout_image" class="form-control" accept="image/*">
+                <small>Upload an image taken at check-out time (required for all analyses)</small>
+            </div>
+
+            <div class="checkbox-group">
+                <input type="checkbox" name="save_showcase" id="save_showcase">
+                <label for="save_showcase">Save as showcase example (for demonstration purposes)</label>
+            </div>
+
+            <div class="form-group">
+                <button type="submit" class="btn">Analyze Images</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if analysis_results %}
+<div class="results-header">
+    <h2>Analysis Results</h2>
+    {% if validation %}
+        <div class="alert alert-success">
+            Validation #{{ validation.id }} created successfully.
+            <a href="{% url 'staff:view_validation' validation.id %}" class="btn btn-sm">View Full Analysis</a>
+            
+            {% if validation.is_showcase %}
+                <a href="{% url 'staff:toggle_validation_showcase' validation.id %}" class="btn btn-sm btn-secondary">Remove from Showcase</a>
+            {% else %}
+                <a href="{% url 'staff:toggle_validation_showcase' validation.id %}" class="btn btn-sm">Add to Showcase</a>
+            {% endif %}
+        </div>
+    {% endif %}
+</div>
+
+<div class="results-container">
+    <!-- Check-in Image Analysis -->
+    <div class="card">
+        <div class="card-header">
+            Before (Check-in) Image Analysis
+        </div>
+        <div class="card-body">
+            {% if analysis_results.detection_error %}
+                <div class="alert alert-danger">{{ analysis_results.detection_error }}</div>
+            {% else %}
+                {% if analysis_results.checkin_image %}
+                    <div class="image-container">
+                        <img src="{{ analysis_results.checkin_image }}" alt="Check-in Image with Detections">
+                    </div>
+                {% endif %}
+                
+                {% if analysis_results.checkin_objects %}
+                    <h4>Detected Objects ({{ analysis_results.checkin_objects|length }})</h4>
+                    <div class="object-list">
+                        {% for obj in analysis_results.checkin_objects %}
+                            <div class="object-item">
+                                <span>{{ obj.label }}</span>
+                                <span>Box: {{ obj.box }}</span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Check-out Image Analysis -->
+    {% if analysis_results.checkout_image %}
+    <div class="card">
+        <div class="card-header">
+            After (Check-out) Image Analysis
+        </div>
+        <div class="card-body">
+            {% if analysis_results.checkout_error %}
+                <div class="alert alert-danger">{{ analysis_results.checkout_error }}</div>
+            {% else %}
+                <div class="image-container">
+                    <img src="{{ analysis_results.checkout_image }}" alt="Check-out Image with Detections">
+                </div>
+                
+                {% if analysis_results.checkout_objects %}
+                    <h4>Detected Objects ({{ analysis_results.checkout_objects|length }})</h4>
+                    <div class="object-list">
+                        {% for obj in analysis_results.checkout_objects %}
+                            <div class="object-item">
+                                <span>{{ obj.label }}</span>
+                                <span>Box: {{ obj.box }}</span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Missing Items Analysis -->
+{% if analysis_results.missing_items %}
+<div class="card">
+    <div class="card-header">
+        Missing Items Analysis
+    </div>
+    <div class="card-body">
+        <div class="missing-items">
+            <h4>Items Missing from Check-out Image</h4>
+            {% for item, count in analysis_results.missing_items.items %}
+                <div class="missing-item">
+                    <span>{{ item|title }}</span>
+                    <span>Quantity: {{ count }}</span>
+                </div>
+            {% empty %}
+                <p>No missing items detected</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Room Comparison Analysis -->
+{% if analysis_results.gemini_analysis %}
+<div class="card">
+    <div class="card-header">
+        Room Comparison Analysis
+    </div>
+    <div class="card-body">
+        {% if analysis_results.gemini_error %}
+            <div class="alert alert-danger">{{ analysis_results.gemini_error }}</div>
+        {% else %}
+            {% if analysis_results.analysis_image %}
+                <div class="image-container">
+                    <img src="{{ analysis_results.analysis_image }}" alt="Room Comparison Analysis">
+                </div>
+            {% endif %}
+            
+            <div class="analysis-result">
+                <h4>Gemini Analysis Results</h4>
+                
+                {% if analysis_results.gemini_analysis.summary %}
+                    <div class="mb-3">
+                        <strong>Summary:</strong> {{ analysis_results.gemini_analysis.summary }}
+                    </div>
+                {% endif %}
+                
+                {% if analysis_results.gemini_analysis.similarity_score %}
+                    <div class="mb-3">
+                        <strong>Similarity Score:</strong> {{ analysis_results.gemini_analysis.similarity_score }}%
+                    </div>
+                {% endif %}
+                
+                {% if analysis_results.gemini_analysis.differences %}
+                    <h5>Detected Differences</h5>
+                    <div class="object-list">
+                        {% for diff in analysis_results.gemini_analysis.differences %}
+                            <div class="object-item">
+                                <span><strong>{{ diff.item }}</strong></span>
+                                <span>{{ diff.change }}</span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Damage Detection Results -->
+{% if analysis_results.damage_analysis %}
+<div class="card">
+    <div class="card-header">
+        Damage Detection Analysis
+    </div>
+    <div class="card-body">
+        {% if analysis_results.damage_error %}
+            <div class="alert alert-danger">{{ analysis_results.damage_error }}</div>
+        {% else %}
+            {% if analysis_results.damage_image %}
+                <div class="image-container">
+                    <img src="{{ analysis_results.damage_image }}" alt="Damage Detection Analysis">
+                </div>
+            {% endif %}
+            
+            <div class="analysis-result">
+                <h4>Damage Detection Results</h4>
+                
+                {% if analysis_results.damage_analysis.summary %}
+                    <div class="mb-3">
+                        <strong>Summary:</strong> {{ analysis_results.damage_analysis.summary }}
+                    </div>
+                {% endif %}
+                
+                {% if analysis_results.damage_analysis.damages %}
+                    <h5>Detected Damages</h5>
+                    <div class="object-list">
+                        {% for damage in analysis_results.damage_analysis.damages %}
+                            <div class="object-item">
+                                <span><strong>{{ damage.type }}</strong> ({{ damage.severity }})</span>
+                                <span>{{ damage.description }}</span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p>No damages detected</p>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Additional scripts can be added here if needed
+</script>
+{% endblock %} 

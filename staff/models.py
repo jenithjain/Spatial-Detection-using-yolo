@@ -74,6 +74,101 @@ class RoomActivity(models.Model):
             print(f"Error parsing missing items: {e}")
             return {'error': 'Could not parse missing items'}
 
+class ModelValidation(models.Model):
+    """Model to store model validation results for showcase purposes"""
+    
+    VALIDATION_TYPE_CHOICES = (
+        ('object_detection', 'Object Detection'),
+        ('gemini_comparison', 'Room Comparison'),
+        ('damage_detection', 'Damage Detection'),
+    )
+    
+    staff_member = models.ForeignKey(StaffMember, on_delete=models.CASCADE, null=True, blank=True)
+    validation_type = models.CharField(max_length=30, choices=VALIDATION_TYPE_CHOICES)
+    created_at = models.DateTimeField(auto_now_add=True)
+    name = models.CharField(max_length=100, blank=True, null=True, help_text="Optional name for this validation")
+    description = models.TextField(blank=True, null=True)
+    
+    # Store the uploaded and processed images
+    checkin_image = models.ImageField(upload_to='model_validation/checkin/', null=True, blank=True)
+    checkout_image = models.ImageField(upload_to='model_validation/checkout/', null=True, blank=True)
+    checkin_annotated = models.ImageField(upload_to='model_validation/checkin_annotated/', null=True, blank=True) 
+    checkout_annotated = models.ImageField(upload_to='model_validation/checkout_annotated/', null=True, blank=True)
+    
+    # Analysis results
+    checkin_objects = models.TextField(blank=True, null=True, help_text="JSON data of detected objects in checkin image")
+    checkout_objects = models.TextField(blank=True, null=True, help_text="JSON data of detected objects in checkout image")
+    missing_items = models.TextField(blank=True, null=True, help_text="JSON data of missing items")
+    
+    # Gemini comparison results
+    gemini_analysis = models.TextField(blank=True, null=True, help_text="JSON data from Gemini room comparison")
+    analysis_image = models.ImageField(upload_to='model_validation/comparison/', null=True, blank=True)
+    
+    # Damage detection results
+    damage_analysis = models.TextField(blank=True, null=True, help_text="JSON data from damage detection")
+    damage_image = models.ImageField(upload_to='model_validation/damages/', null=True, blank=True)
+    
+    # For showcasing purposes
+    is_showcase = models.BooleanField(default=False, help_text="Whether this validation should be showcased")
+    showcase_order = models.IntegerField(default=0, help_text="Order to display in showcase")
+    
+    def __str__(self):
+        return f"{self.get_validation_type_display()} - {self.created_at}"
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name_plural = "Model Validations"
+    
+    def get_checkin_objects(self):
+        """Get checkin objects as Python object"""
+        if not self.checkin_objects:
+            return []
+        try:
+            return json.loads(self.checkin_objects)
+        except Exception as e:
+            print(f"Error parsing checkin objects: {e}")
+            return []
+    
+    def get_checkout_objects(self):
+        """Get checkout objects as Python object"""
+        if not self.checkout_objects:
+            return []
+        try:
+            return json.loads(self.checkout_objects)
+        except Exception as e:
+            print(f"Error parsing checkout objects: {e}")
+            return []
+    
+    def get_missing_items(self):
+        """Get missing items as Python object"""
+        if not self.missing_items:
+            return {}
+        try:
+            return json.loads(self.missing_items)
+        except Exception as e:
+            print(f"Error parsing missing items: {e}")
+            return {}
+    
+    def get_gemini_analysis(self):
+        """Get Gemini analysis as Python object"""
+        if not self.gemini_analysis:
+            return {}
+        try:
+            return json.loads(self.gemini_analysis)
+        except Exception as e:
+            print(f"Error parsing Gemini analysis: {e}")
+            return {}
+    
+    def get_damage_analysis(self):
+        """Get damage analysis as Python object"""
+        if not self.damage_analysis:
+            return {}
+        try:
+            return json.loads(self.damage_analysis)
+        except Exception as e:
+            print(f"Error parsing damage analysis: {e}")
+            return {}
+
 class CheckoutAnalysis(models.Model):
     """Model to store detailed visual analysis results from room checkouts"""
     ANALYSIS_STATUS_CHOICES = (

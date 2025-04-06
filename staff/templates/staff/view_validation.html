@@ -1,0 +1,395 @@
+{% extends 'staff/base.html' %}
+{% load static %}
+
+{% block title %}{{ validation.name|default:"Validation Result" }} - Staff Portal{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card {
+        background-color: var(--card-background);
+        border: 2px solid var(--text-color);
+        border-radius: 12px;
+        box-shadow: var(--shadow-sm);
+        margin-bottom: 1.5rem;
+        transition: all 0.2s ease;
+        overflow: hidden;
+    }
+
+    .card:hover {
+        box-shadow: var(--shadow-hover);
+        transform: translateY(-3px);
+    }
+
+    .card-header {
+        background-color: var(--primary-color);
+        padding: 1rem 1.5rem;
+        border-bottom: 2px solid var(--text-color);
+        font-weight: 600;
+    }
+
+    .card-body {
+        padding: 1.5rem;
+    }
+
+    .btn {
+        background-color: var(--primary-color);
+        color: var(--text-color);
+        font-weight: 600;
+        padding: 0.75rem 1.5rem;
+        border: 2px solid var(--text-color);
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: inline-block;
+        font-size: 0.9375rem;
+        text-decoration: none;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .btn:hover {
+        box-shadow: var(--shadow-hover);
+        transform: translateY(-2px);
+    }
+
+    .btn-secondary {
+        background-color: #f0f0f0;
+    }
+
+    .image-container {
+        width: 100%;
+        border-radius: 8px;
+        overflow: hidden;
+        margin: 1rem 0;
+        border: 2px solid rgba(21, 22, 22, 0.1);
+    }
+
+    .image-container img {
+        width: 100%;
+        height: auto;
+        display: block;
+    }
+
+    .results-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+    }
+
+    .missing-items {
+        background-color: #fff0f0;
+        border: 2px solid #ff6b6b;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-top: 1rem;
+    }
+
+    .missing-items h4 {
+        color: #e53e3e;
+        margin-bottom: 0.5rem;
+    }
+
+    .missing-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #ffcccc;
+    }
+
+    .missing-item:last-child {
+        border-bottom: none;
+    }
+
+    .analysis-result {
+        background-color: #f0f7ff;
+        border: 2px solid #3182ce;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-top: 1rem;
+    }
+
+    .object-list {
+        max-height: 300px;
+        overflow-y: auto;
+        padding: 0.5rem;
+        border: 1px solid #eee;
+        border-radius: 4px;
+        background-color: #fafafa;
+    }
+
+    .object-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.5rem;
+        border-bottom: 1px solid #eee;
+    }
+
+    .object-item:last-child {
+        border-bottom: none;
+    }
+
+    .showcase-actions {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 1rem;
+    }
+
+    .showcase-actions .btn {
+        margin-left: 0.5rem;
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+    }
+
+    .badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        font-size: 0.875rem;
+        font-weight: 600;
+        border-radius: 50px;
+        margin-left: 0.5rem;
+    }
+
+    .badge-primary {
+        background-color: var(--primary-color);
+        color: var(--text-color);
+        border: 1px solid var(--text-color);
+    }
+
+    .validation-meta {
+        margin-bottom: 1.5rem;
+        padding: 1rem;
+        background-color: #f9f9f9;
+        border-radius: 8px;
+        border: 1px solid #eee;
+    }
+
+    .validation-meta dl {
+        display: grid;
+        grid-template-columns: 120px 1fr;
+        gap: 0.5rem;
+        margin: 0;
+    }
+
+    .validation-meta dt {
+        font-weight: 600;
+    }
+
+    @media (max-width: 768px) {
+        .results-container {
+            grid-template-columns: 1fr;
+        }
+
+        .validation-meta dl {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>
+        {% if validation.name %}
+            {{ validation.name }}
+        {% else %}
+            Validation Result #{{ validation.id }}
+        {% endif %}
+        
+        {% if validation.is_showcase %}
+            <span class="badge badge-primary">Showcase Example</span>
+        {% endif %}
+    </h1>
+    
+    <div class="showcase-actions">
+        <a href="{% url 'staff:model_validation' %}" class="btn btn-secondary">Back to Validation</a>
+        {% if validation.is_showcase %}
+            <a href="{% url 'staff:toggle_validation_showcase' validation.id %}" class="btn btn-secondary">Remove from Showcase</a>
+        {% else %}
+            <a href="{% url 'staff:toggle_validation_showcase' validation.id %}" class="btn">Add to Showcase</a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="validation-meta">
+    <dl>
+        <dt>Type:</dt>
+        <dd>{{ validation.get_validation_type_display }}</dd>
+        
+        <dt>Created:</dt>
+        <dd>{{ validation.created_at|date:"F j, Y, g:i a" }}</dd>
+        
+        {% if validation.staff_member %}
+            <dt>Staff:</dt>
+            <dd>{{ validation.staff_member }}</dd>
+        {% endif %}
+        
+        {% if validation.description %}
+            <dt>Description:</dt>
+            <dd>{{ validation.description }}</dd>
+        {% endif %}
+    </dl>
+</div>
+
+{% if analysis_results %}
+<div class="results-container">
+    <!-- Check-in Image Analysis -->
+    <div class="card">
+        <div class="card-header">
+            Before (Check-in) Image Analysis
+        </div>
+        <div class="card-body">
+            {% if analysis_results.checkin_image %}
+                <div class="image-container">
+                    <img src="{{ analysis_results.checkin_image }}" alt="Check-in Image with Detections">
+                </div>
+            {% endif %}
+            
+            {% if analysis_results.checkin_objects %}
+                <h4>Detected Objects ({{ analysis_results.checkin_objects|length }})</h4>
+                <div class="object-list">
+                    {% for obj in analysis_results.checkin_objects %}
+                        <div class="object-item">
+                            <span>{{ obj.label }}</span>
+                            <span>Box: {{ obj.box }}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Check-out Image Analysis -->
+    {% if analysis_results.checkout_image %}
+    <div class="card">
+        <div class="card-header">
+            After (Check-out) Image Analysis
+        </div>
+        <div class="card-body">
+            <div class="image-container">
+                <img src="{{ analysis_results.checkout_image }}" alt="Check-out Image with Detections">
+            </div>
+            
+            {% if analysis_results.checkout_objects %}
+                <h4>Detected Objects ({{ analysis_results.checkout_objects|length }})</h4>
+                <div class="object-list">
+                    {% for obj in analysis_results.checkout_objects %}
+                        <div class="object-item">
+                            <span>{{ obj.label }}</span>
+                            <span>Box: {{ obj.box }}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Missing Items Analysis -->
+{% if analysis_results.missing_items %}
+<div class="card">
+    <div class="card-header">
+        Missing Items Analysis
+    </div>
+    <div class="card-body">
+        <div class="missing-items">
+            <h4>Items Missing from Check-out Image</h4>
+            {% for item, count in analysis_results.missing_items.items %}
+                <div class="missing-item">
+                    <span>{{ item|title }}</span>
+                    <span>Quantity: {{ count }}</span>
+                </div>
+            {% empty %}
+                <p>No missing items detected</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Room Comparison Analysis -->
+{% if analysis_results.gemini_analysis %}
+<div class="card">
+    <div class="card-header">
+        Room Comparison Analysis
+    </div>
+    <div class="card-body">
+        {% if analysis_results.analysis_image %}
+            <div class="image-container">
+                <img src="{{ analysis_results.analysis_image }}" alt="Room Comparison Analysis">
+            </div>
+        {% endif %}
+        
+        <div class="analysis-result">
+            <h4>Gemini Analysis Results</h4>
+            
+            {% if analysis_results.gemini_analysis.summary %}
+                <div class="mb-3">
+                    <strong>Summary:</strong> {{ analysis_results.gemini_analysis.summary }}
+                </div>
+            {% endif %}
+            
+            {% if analysis_results.gemini_analysis.similarity_score %}
+                <div class="mb-3">
+                    <strong>Similarity Score:</strong> {{ analysis_results.gemini_analysis.similarity_score }}%
+                </div>
+            {% endif %}
+            
+            {% if analysis_results.gemini_analysis.differences %}
+                <h5>Detected Differences</h5>
+                <div class="object-list">
+                    {% for diff in analysis_results.gemini_analysis.differences %}
+                        <div class="object-item">
+                            <span><strong>{{ diff.item }}</strong></span>
+                            <span>{{ diff.change }}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Damage Detection Results -->
+{% if analysis_results.damage_analysis %}
+<div class="card">
+    <div class="card-header">
+        Damage Detection Analysis
+    </div>
+    <div class="card-body">
+        {% if analysis_results.damage_image %}
+            <div class="image-container">
+                <img src="{{ analysis_results.damage_image }}" alt="Damage Detection Analysis">
+            </div>
+        {% endif %}
+        
+        <div class="analysis-result">
+            <h4>Damage Detection Results</h4>
+            
+            {% if analysis_results.damage_analysis.summary %}
+                <div class="mb-3">
+                    <strong>Summary:</strong> {{ analysis_results.damage_analysis.summary }}
+                </div>
+            {% endif %}
+            
+            {% if analysis_results.damage_analysis.damages %}
+                <h5>Detected Damages</h5>
+                <div class="object-list">
+                    {% for damage in analysis_results.damage_analysis.damages %}
+                        <div class="object-item">
+                            <span><strong>{{ damage.type }}</strong> ({{ damage.severity }})</span>
+                            <span>{{ damage.description }}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p>No damages detected</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endif %}
+
+{% endblock %} 

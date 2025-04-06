@@ -25,4 +25,10 @@ urlpatterns = [
     path('room/analyze-checkout/<int:activity_id>/', views.analyze_checkout_images, name='analyze_checkout_images'),
     path('api/analyze-checkout/', views.analyze_checkout, name='api_analyze_checkout'),
     path('room/misplaced-items/<int:activity_id>/', views.misplaced_items_analysis, name='misplaced_items_analysis'),
+    
+    # Model validation URLs
+    path('model-validation/', views.model_validation, name='model_validation'),
+    path('model-validation/<int:validation_id>/', views.view_validation, name='view_validation'),
+    path('model-validation/<int:validation_id>/toggle-showcase/', views.toggle_validation_showcase, name='toggle_validation_showcase'),
+    path('model-validation/showcase/', views.validation_showcase, name='validation_showcase'),
 ] 
