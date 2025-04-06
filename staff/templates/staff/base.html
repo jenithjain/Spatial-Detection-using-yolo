@@ -202,6 +202,10 @@
                     <i class="material-icons">meeting_room</i>
                     <span>New Check-In</span>
                 </a>
+                <a href="{% url 'staff:room_checkout_list' %}" class="nav-item {% if request.resolver_match.url_name == 'room_checkout_list' %}active{% endif %}">
+                    <i class="material-icons">exit_to_app</i>
+                    <span>Room Check-Out</span>
+                </a>
             </nav>
 
             <nav class="nav-menu bottom-menu">
