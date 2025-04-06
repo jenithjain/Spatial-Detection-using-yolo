@@ -16,6 +16,7 @@ urlpatterns = [
     # Room check-in/check-out URLs
     path('room/check-in/', views.room_check_in, name='room_check_in'),
     path('room/check-in/upload/<int:activity_id>/', views.upload_checkin_image, name='upload_checkin_image'),
+    path('room/check-out/', views.room_checkout_list, name='room_checkout_list'),
     path('room/check-out/<int:activity_id>/', views.room_check_out, name='room_check_out'),
     path('room/check-out/upload/<int:activity_id>/', views.upload_checkout_image, name='upload_checkout_image'),
     path('room/comparison/<int:activity_id>/', views.view_comparison, name='view_comparison'),

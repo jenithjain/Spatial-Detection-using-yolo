@@ -1,0 +1,293 @@
+{% extends 'staff/base.html' %}
+
+{% block title %}Room Check-Out List - ScanFlow{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Reset background to match base template */
+    .main-content {
+        background-color: var(--background-color);
+        padding-top: 1rem;
+    }
+    
+    /* Page title */
+    .page-title {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    
+    .page-title h2 {
+        font-size: 1.75rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+    
+    .page-title p {
+        font-size: 0.875rem;
+        color: rgba(0,0,0,0.6);
+    }
+    
+    /* Content container */
+    .content-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 1rem;
+    }
+    
+    /* Search and filter section */
+    .filters-section {
+        background-color: #FFFFFF;
+        border-radius: 10px;
+        border: 1px solid rgba(21, 22, 22, 0.1);
+        box-shadow: 3px 3px 0px 0px rgba(21, 22, 22, 0.1);
+        padding: 1rem;
+        margin-bottom: 2rem;
+    }
+    
+    .search-bar {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .search-input {
+        flex: 1;
+        padding: 0.625rem 1rem;
+        border-radius: 8px;
+        border: 1px solid rgba(0,0,0,0.15);
+        font-size: 0.875rem;
+    }
+    
+    .search-input:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 2px rgba(214, 243, 47, 0.25);
+    }
+    
+    /* Room grid */
+    .rooms-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1.5rem;
+    }
+    
+    .room-card {
+        background-color: #FFFFFF;
+        border-radius: 10px;
+        border: 1px solid rgba(21, 22, 22, 0.1);
+        box-shadow: 3px 3px 0px 0px rgba(21, 22, 22, 0.1);
+        overflow: hidden;
+        transition: transform 0.2s ease;
+    }
+    
+    .room-card:hover {
+        transform: translateY(-2px);
+    }
+    
+    .room-card .card-header {
+        padding: 1rem;
+        border-bottom: 1px solid rgba(0,0,0,0.1);
+        background-color: #fafafa;
+    }
+    
+    .room-number {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin: 0;
+        color: var(--text-color);
+    }
+    
+    .room-card .card-body {
+        padding: 1rem;
+    }
+    
+    .room-details {
+        margin-bottom: 1rem;
+    }
+    
+    .detail-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.5rem;
+        font-size: 0.875rem;
+    }
+    
+    .detail-label {
+        color: rgba(0,0,0,0.6);
+    }
+    
+    .detail-value {
+        font-weight: 500;
+    }
+    
+    .room-status {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+    }
+    
+    .status-active {
+        background-color: rgba(214, 243, 47, 0.2);
+        color: var(--text-color);
+    }
+    
+    .btn-checkout {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        width: 100%;
+        background-color: var(--primary-color);
+        border: 1px solid var(--text-color);
+        border-radius: 8px;
+        box-shadow: 2px 2px 0px var(--text-color);
+        font-weight: 600;
+        font-size: 0.875rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-decoration: none;
+        color: var(--text-color);
+    }
+    
+    .btn-checkout:hover {
+        transform: translate(1px, 1px);
+        box-shadow: 1px 1px 0px var(--text-color);
+    }
+    
+    .btn-checkout svg {
+        width: 16px;
+        height: 16px;
+    }
+    
+    /* Empty state */
+    .empty-state {
+        text-align: center;
+        padding: 3rem 1rem;
+        background-color: #FFFFFF;
+        border-radius: 10px;
+        border: 1px solid rgba(21, 22, 22, 0.1);
+        box-shadow: 3px 3px 0px 0px rgba(21, 22, 22, 0.1);
+    }
+    
+    .empty-state svg {
+        width: 64px;
+        height: 64px;
+        color: rgba(0,0,0,0.2);
+        margin-bottom: 1rem;
+    }
+    
+    .empty-state h3 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+    
+    .empty-state p {
+        font-size: 0.875rem;
+        color: rgba(0,0,0,0.6);
+        margin-bottom: 0;
+    }
+    
+    /* Responsive design */
+    @media (max-width: 768px) {
+        .rooms-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .search-bar {
+            flex-direction: column;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="content-container">
+    <div class="page-title">
+        <h2>Room Check-Out</h2>
+        <p>Select a room to begin the check-out process</p>
+    </div>
+    
+    <div class="filters-section">
+        <div class="search-bar">
+            <input type="text" class="search-input" placeholder="Search by room number..." id="roomSearch">
+        </div>
+    </div>
+    
+    {% if active_rooms %}
+    <div class="rooms-grid">
+        {% for activity in active_rooms %}
+        <div class="room-card" data-room-number="{{ activity.room_number }}">
+            <div class="card-header">
+                <h3 class="room-number">Room {{ activity.room_number }}</h3>
+            </div>
+            <div class="card-body">
+                <span class="room-status status-active">Active</span>
+                
+                <div class="room-details">
+                    <div class="detail-row">
+                        <span class="detail-label">Check-In Time</span>
+                        <span class="detail-value">{{ activity.check_in_time|date:"M d, Y H:i" }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Staff Member</span>
+                        <span class="detail-value">{{ activity.staff_member.user.get_full_name }}</span>
+                    </div>
+                    {% if activity.notes %}
+                    <div class="detail-row">
+                        <span class="detail-label">Notes</span>
+                        <span class="detail-value">{{ activity.notes|truncatechars:50 }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <a href="{% url 'staff:room_check_out' activity.id %}" class="btn-checkout">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                        <polyline points="16 17 21 12 16 7"></polyline>
+                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
+                    Check-Out Room
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 9V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v3"></path>
+            <path d="M21 15v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-3"></path>
+            <line x1="7" y1="6" x2="7" y2="18"></line>
+            <line x1="17" y1="6" x2="17" y2="18"></line>
+        </svg>
+        <h3>No Active Rooms</h3>
+        <p>There are no rooms currently checked in that need to be checked out.</p>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('roomSearch');
+    const roomCards = document.querySelectorAll('.room-card');
+    
+    searchInput.addEventListener('input', function(e) {
+        const searchTerm = e.target.value.toLowerCase();
+        
+        roomCards.forEach(card => {
+            const roomNumber = card.dataset.roomNumber.toLowerCase();
+            if (roomNumber.includes(searchTerm)) {
+                card.style.display = '';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    });
+});
+</script>
+{% endblock %} 

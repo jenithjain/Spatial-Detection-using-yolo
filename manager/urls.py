@@ -12,4 +12,6 @@ urlpatterns = [
     ), name='login'),
     path('register/', views.manager_register, name='register'),
     path('dashboard/', views.manager_dashboard, name='dashboard'),
+    path('inventory/', views.manager_inventory, name='inventory'),
+    path('analysis/', views.manager_analysis, name='analysis'),
 ] 
