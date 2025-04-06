@@ -160,6 +160,10 @@
                 width: 85%;
                 max-width: 320px;
                 z-index: 1000;
+                background-color: var(--card-background);
+                height: 100%;
+                top: 0;
+                bottom: 0;
             }
 
             .sidebar.active {
@@ -171,7 +175,57 @@
                 margin-left: 0;
                 padding: 1rem;
                 width: 100%;
+                padding-top: 4rem;
             }
+
+            .mobile-menu-toggle {
+                display: flex !important;
+                align-items: center;
+                justify-content: center;
+                width: 48px;
+                height: 48px;
+                background-color: var(--primary-color);
+            }
+        }
+
+        .mobile-menu-toggle {
+            display: none;
+            position: fixed;
+            top: 1rem;
+            left: 1rem;
+            z-index: 1001;
+            background: var(--card-background);
+            border: 2px solid var(--text-color);
+            border-radius: 12px;
+            padding: 0.5rem;
+            box-shadow: var(--shadow-sm);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .mobile-menu-toggle:active {
+            transform: scale(0.95);
+        }
+
+        .mobile-menu-toggle i {
+            font-size: 24px;
+            color: var(--text-color);
+        }
+
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+            backdrop-filter: blur(2px);
+        }
+
+        .overlay.active {
+            display: block;
         }
 
         {% block extra_css %}{% endblock %}
@@ -179,8 +233,13 @@
 </head>
 <body>
     <div class="dashboard-container">
+        <!-- Mobile Menu Toggle Button -->
+        <button class="mobile-menu-toggle" id="mobileMenuToggle" onclick="toggleMobileMenu()">
+            <i class="material-icons">menu</i>
+        </button>
+
         <!-- Overlay for mobile menu -->
-        <div class="overlay" id="overlay"></div>
+        <div class="overlay" id="overlay" onclick="toggleMobileMenu()"></div>
 
         <!-- Sidebar -->
         <aside class="sidebar" id="sidebar">
@@ -241,20 +300,28 @@
         // Mobile Menu Functionality
         const sidebar = document.getElementById('sidebar');
         const overlay = document.getElementById('overlay');
+        const menuButton = document.getElementById('mobileMenuToggle');
 
         function toggleMobileMenu() {
             sidebar.classList.toggle('active');
             overlay.classList.toggle('active');
             document.body.style.overflow = sidebar.classList.contains('active') ? 'hidden' : '';
+            event.stopPropagation();
         }
 
-        overlay.addEventListener('click', toggleMobileMenu);
-
-        // Close menu on window resize (if desktop size)
-        window.addEventListener('resize', () => {
-            if (window.innerWidth > 768 && sidebar.classList.contains('active')) {
+        // Close mobile menu when clicking outside
+        document.addEventListener('click', function(event) {
+            const isClickInside = sidebar.contains(event.target) || 
+                                menuButton.contains(event.target);
+            
+            if (!isClickInside && sidebar.classList.contains('active')) {
                 toggleMobileMenu();
             }
+        });
+
+        // Prevent clicks inside sidebar from closing the menu
+        sidebar.addEventListener('click', function(event) {
+            event.stopPropagation();
         });
     </script>
     {% block scripts %}{% endblock %}
