@@ -575,16 +575,7 @@
             </svg>
         </div>
         <div class="stat-label">Missing Items</div>
-        <div class="stat-value">
-            {% with missing_count=0 %}
-                {% for room in completed_rooms %}
-                    {% if room.has_missing_items %}
-                        {% with missing_count=missing_count|add:1 %}{% endwith %}
-                    {% endif %}
-                {% endfor %}
-                {{ missing_count }}
-            {% endwith %}
-        </div>
+        <div class="stat-value">{{ missing_items_count }}</div>
         <div class="stat-trend" style="color: #ff3d00;">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(180deg);">
                 <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
