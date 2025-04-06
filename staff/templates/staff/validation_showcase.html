@@ -1,0 +1,433 @@
+{% extends 'staff/base.html' %}
+{% load static %}
+
+{% block title %}Model Validation Showcase - Staff Portal{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card {
+        background-color: var(--card-background);
+        border: 2px solid var(--text-color);
+        border-radius: 12px;
+        box-shadow: var(--shadow-sm);
+        margin-bottom: 1.5rem;
+        transition: all 0.2s ease;
+        overflow: hidden;
+    }
+
+    .card:hover {
+        box-shadow: var(--shadow-hover);
+        transform: translateY(-3px);
+    }
+
+    .card-header {
+        background-color: var(--primary-color);
+        padding: 1rem 1.5rem;
+        border-bottom: 2px solid var(--text-color);
+        font-weight: 600;
+    }
+
+    .card-body {
+        padding: 1.5rem;
+    }
+
+    .btn {
+        background-color: var(--primary-color);
+        color: var(--text-color);
+        font-weight: 600;
+        padding: 0.75rem 1.5rem;
+        border: 2px solid var(--text-color);
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: inline-block;
+        font-size: 0.9375rem;
+        text-decoration: none;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .btn:hover {
+        box-shadow: var(--shadow-hover);
+        transform: translateY(-2px);
+    }
+
+    .btn-secondary {
+        background-color: #f0f0f0;
+    }
+
+    .showcase-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .showcase-card {
+        background-color: var(--card-background);
+        border: 2px solid var(--text-color);
+        border-radius: 12px;
+        overflow: hidden;
+        transition: all 0.2s ease;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .showcase-card:hover {
+        box-shadow: var(--shadow-hover);
+        transform: translateY(-3px);
+    }
+
+    .showcase-image {
+        width: 100%;
+        height: 200px;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .showcase-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .showcase-label {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        padding: 0.25rem 0.75rem;
+        background-color: var(--primary-color);
+        border: 1px solid var(--text-color);
+        border-radius: 50px;
+        font-weight: 600;
+        font-size: 0.75rem;
+    }
+
+    .showcase-content {
+        padding: 1.25rem;
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .showcase-title {
+        margin-bottom: 0.75rem;
+        font-size: 1.125rem;
+        font-weight: 600;
+    }
+
+    .showcase-meta {
+        font-size: 0.875rem;
+        color: #666;
+        margin-bottom: 0.75rem;
+    }
+
+    .showcase-desc {
+        margin-bottom: 1rem;
+        flex-grow: 1;
+    }
+
+    .showcase-actions {
+        margin-top: auto;
+    }
+
+    .showcase-actions .btn {
+        width: 100%;
+        padding: 0.625rem;
+        text-align: center;
+    }
+
+    .empty-showcase {
+        text-align: center;
+        padding: 3rem;
+        background-color: #f5f5f5;
+        border-radius: 12px;
+        border: 2px dashed #ccc;
+    }
+
+    .empty-showcase i {
+        font-size: 3rem;
+        color: #999;
+        margin-bottom: 1rem;
+        display: block;
+    }
+
+    .showcase-stats {
+        margin-bottom: 1rem;
+    }
+
+    .stat-item {
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-label {
+        font-weight: 600;
+    }
+
+    .stat-value {
+        margin-left: 0.5rem;
+    }
+
+    .missing {
+        color: #ff0000;
+    }
+
+    .changed {
+        color: #ffa500;
+    }
+
+    .damage {
+        color: #0000ff;
+    }
+
+    @media (max-width: 768px) {
+        .showcase-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .filter-summary {
+        margin-bottom: 1.5rem;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .filter-count {
+        font-size: 1.1rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .filter-details {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .filter-stat {
+        padding: 0.35rem 0.75rem;
+        background-color: #f5f5f5;
+        border-radius: 50px;
+        font-size: 0.875rem;
+    }
+
+    .filter-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+
+    .filter-btn {
+        padding: 0.5rem 1rem;
+        background-color: #f0f0f0;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        text-decoration: none;
+        color: var(--text-color);
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+
+    .filter-btn:hover {
+        background-color: #e9e9e9;
+        transform: translateY(-2px);
+    }
+
+    .filter-btn.active {
+        background-color: var(--primary-color);
+        border-color: var(--text-color);
+        font-weight: 600;
+    }
+
+    .analysis-badges {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        display: flex;
+        gap: 0.25rem;
+    }
+
+    .analysis-badge {
+        background-color: var(--primary-color);
+        border-radius: 50px;
+        padding: 0.25rem 0.75rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--text-color);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Model Validation Showcase</h1>
+    <p>A collection of featured validation examples showcasing the system's capabilities</p>
+</div>
+
+<!-- Filter controls -->
+<div class="card">
+    <div class="card-header">
+        Filter Showcase Items
+    </div>
+    <div class="card-body">
+        <div class="filter-summary">
+            <div class="filter-count">
+                <strong>Total showcase examples:</strong> {{ filter_counts.total }}
+            </div>
+            <div class="filter-details">
+                <span class="filter-stat">Object Detection: {{ filter_counts.object_detection }}</span>
+                <span class="filter-stat">Room Comparison: {{ filter_counts.gemini_comparison }}</span>
+                <span class="filter-stat">Damage Detection: {{ filter_counts.damage_detection }}</span>
+            </div>
+        </div>
+        
+        <div class="filter-buttons">
+            <a href="{% url 'staff:validation_showcase' %}" class="filter-btn {% if not current_filter %}active{% endif %}">
+                All Types
+            </a>
+            <a href="{% url 'staff:validation_showcase' %}?type=object_detection" class="filter-btn {% if current_filter == 'object_detection' %}active{% endif %}">
+                Object Detection
+            </a>
+            <a href="{% url 'staff:validation_showcase' %}?type=gemini_comparison" class="filter-btn {% if current_filter == 'gemini_comparison' %}active{% endif %}">
+                Room Comparison
+            </a>
+            <a href="{% url 'staff:validation_showcase' %}?type=damage_detection" class="filter-btn {% if current_filter == 'damage_detection' %}active{% endif %}">
+                Damage Detection
+            </a>
+        </div>
+    </div>
+</div>
+
+{% if showcase_items %}
+    <div class="showcase-grid">
+        {% for item in showcase_items %}
+            <div class="showcase-card">
+                <div class="showcase-image">
+                    {% if item.damage_image %}
+                        <img src="{{ item.damage_image.url }}" alt="Damage Detection Example">
+                    {% elif item.analysis_image %}
+                        <img src="{{ item.analysis_image.url }}" alt="Room Comparison Example">
+                    {% elif item.checkin_annotated %}
+                        <img src="{{ item.checkin_annotated.url }}" alt="Object Detection Example">
+                    {% elif item.checkout_annotated %}
+                        <img src="{{ item.checkout_annotated.url }}" alt="Object Detection Example">
+                    {% endif %}
+                    
+                    <!-- Indicate all available analyses -->
+                    <div class="analysis-badges">
+                        <span class="analysis-badge" title="Object Detection">
+                            <i class="material-icons">search</i>
+                        </span>
+                        {% if item.gemini_analysis %}
+                        <span class="analysis-badge" title="Room Comparison">
+                            <i class="material-icons">compare</i>
+                        </span>
+                        {% endif %}
+                        {% if item.damage_analysis %}
+                        <span class="analysis-badge" title="Damage Detection">
+                            <i class="material-icons">broken_image</i>
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="showcase-content">
+                    <h3 class="showcase-title">
+                        {% if item.name %}
+                            {{ item.name }}
+                        {% else %}
+                            Validation #{{ item.id }}
+                        {% endif %}
+                    </h3>
+                    <div class="showcase-meta">
+                        Created: {{ item.created_at|date:"M d, Y" }}
+                        {% if item.staff_member %}
+                            by {{ item.staff_member }}
+                        {% endif %}
+                    </div>
+                    
+                    <div class="showcase-stats">
+                        <!-- Object Detection Stats -->
+                        {% with checkin_objects=item.get_checkin_objects checkout_objects=item.get_checkout_objects %}
+                            <div class="stat-item">
+                                <span class="stat-label">Check-in Objects:</span>
+                                <span class="stat-value">{{ checkin_objects|length }}</span>
+                            </div>
+                            {% if checkout_objects %}
+                            <div class="stat-item">
+                                <span class="stat-label">Check-out Objects:</span>
+                                <span class="stat-value">{{ checkout_objects|length }}</span>
+                            </div>
+                            {% endif %}
+                            
+                            {% with missing_items=item.get_missing_items %}
+                                {% if missing_items %}
+                                <div class="stat-item missing">
+                                    <span class="stat-label">Missing Items:</span>
+                                    <span class="stat-value">{{ missing_items|length }}</span>
+                                </div>
+                                {% endif %}
+                            {% endwith %}
+                        {% endwith %}
+                        
+                        <!-- Room Comparison Stats -->
+                        {% if item.gemini_analysis %}
+                            {% with analysis=item.get_gemini_analysis %}
+                                {% if analysis.similarity_score %}
+                                <div class="stat-item">
+                                    <span class="stat-label">Similarity:</span>
+                                    <span class="stat-value">{{ analysis.similarity_score }}%</span>
+                                </div>
+                                {% endif %}
+                                
+                                {% if analysis.differences %}
+                                <div class="stat-item changed">
+                                    <span class="stat-label">Changes Detected:</span>
+                                    <span class="stat-value">{{ analysis.differences|length }}</span>
+                                </div>
+                                {% endif %}
+                            {% endwith %}
+                        {% endif %}
+                        
+                        <!-- Damage Detection Stats -->
+                        {% if item.damage_analysis %}
+                            {% with damage_analysis=item.get_damage_analysis %}
+                                {% if damage_analysis.damages %}
+                                <div class="stat-item damage">
+                                    <span class="stat-label">Damages Found:</span>
+                                    <span class="stat-value">{{ damage_analysis.damages|length }}</span>
+                                </div>
+                                {% else %}
+                                <div class="stat-item">
+                                    <span class="stat-label">Status:</span>
+                                    <span class="stat-value">No damages detected</span>
+                                </div>
+                                {% endif %}
+                            {% endwith %}
+                        {% endif %}
+                    </div>
+                    
+                    {% if item.description %}
+                        <div class="showcase-desc">{{ item.description|truncatechars:100 }}</div>
+                    {% endif %}
+                    <div class="showcase-actions">
+                        <a href="{% url 'staff:view_validation' item.id %}" class="btn">View Full Analysis</a>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="empty-showcase">
+        <i class="material-icons">collections</i>
+        <h3>No showcase examples found</h3>
+        {% if current_filter %}
+            <p>No examples match the current filter. Try selecting a different filter or creating new validation examples.</p>
+            <a href="{% url 'staff:validation_showcase' %}" class="btn">View All Examples</a>
+        {% else %}
+            <p>Run some validations and mark them as showcase examples to see them here</p>
+            <a href="{% url 'staff:model_validation' %}" class="btn">Go to Validation</a>
+        {% endif %}
+    </div>
+{% endif %}
+
+{% endblock %} 
