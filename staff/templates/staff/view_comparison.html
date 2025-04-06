@@ -193,31 +193,77 @@
         border-bottom: none;
     }
 
+    .inventory-section {
+        background: #fff;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-top: 2rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        border: 1px solid rgba(0,0,0,0.1);
+    }
+
+    .inventory-section h3 {
+        font-size: 1.25rem;
+        color: var(--text-color);
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
     .inventory-table {
         width: 100%;
         border-collapse: separate;
         border-spacing: 0;
-        background: #fff;
-        border-radius: 12px;
-        overflow: hidden;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 1rem;
     }
 
     .inventory-table th {
         background: #f8f9fa;
         padding: 1rem;
         font-weight: 600;
+        color: var(--text-color);
         text-align: left;
         border-bottom: 2px solid rgba(0,0,0,0.1);
+        white-space: nowrap;
     }
 
     .inventory-table td {
         padding: 1rem;
         border-bottom: 1px solid rgba(0,0,0,0.05);
+        vertical-align: middle;
     }
 
     .inventory-table tr:last-child td {
         border-bottom: none;
+    }
+
+    .inventory-table tr:hover {
+        background-color: rgba(0,0,0,0.01);
+    }
+
+    .inventory-table .object-name {
+        font-weight: 500;
+        color: var(--text-color);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .inventory-table .count-cell {
+        font-family: monospace;
+        font-size: 0.95rem;
+        color: var(--text-color);
+        background: #f8f9fa;
+        padding: 0.25rem 0.75rem;
+        border-radius: 4px;
+        display: inline-block;
+    }
+
+    .inventory-table .status-cell {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
     }
 
     .badge {
@@ -228,6 +274,11 @@
         border-radius: 20px;
         font-size: 0.875rem;
         font-weight: 500;
+        white-space: nowrap;
+    }
+
+    .badge i {
+        font-size: 0.75rem;
     }
 
     .badge.success {
@@ -251,18 +302,37 @@
     }
 
     .mark-as-ok-btn {
-        padding: 0.25rem 0.5rem;
-        border-radius: 4px;
+        padding: 0.35rem 0.75rem;
+        border-radius: 6px;
         border: 1px solid rgba(0,0,0,0.1);
         background: #fff;
-        color: rgba(0,0,0,0.6);
+        color: var(--text-color);
         cursor: pointer;
         transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        font-size: 0.875rem;
+        font-weight: 500;
     }
 
     .mark-as-ok-btn:hover {
         background: #f8f9fa;
         border-color: rgba(0,0,0,0.2);
+        transform: translateY(-1px);
+    }
+
+    .mark-as-ok-btn:active {
+        transform: translateY(0);
+    }
+
+    .mark-as-ok-btn i {
+        font-size: 0.75rem;
+    }
+
+    .mark-as-ok-btn.loading {
+        opacity: 0.7;
+        cursor: not-allowed;
     }
 
     @media (max-width: 768px) {
@@ -586,113 +656,161 @@
         </div>
     </div>
 
-    <div class="table-responsive">
-        <h3 class="mb-3">Item Inventory Comparison</h3>
-        <table class="inventory-table">
-            <thead>
-                <tr>
-                    <th>Object</th>
-                    <th>Check-in Count</th>
-                    <th>Check-out Count</th>
-                    <th>Status</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for object, count in normalized_checkin_counts.items %}
-                <tr>
-                    <td><strong>{{ object|title }}</strong></td>
-                    <td>{{ count }}</td>
-                    {% with checkout_count=normalized_checkout_counts|get_item:object|default:"0" %}
-                    <td>{{ checkout_count }}</td>
-                    <td>
-                        {% if object in approved_items %}
-                            <span class="badge success">OK (Approved)</span>
-                        {% elif checkout_count < count %}
-                            {% with diff=count|subtract:checkout_count %}
-                                {% if diff > threshold %}
-                                    <span class="badge danger">Missing ({{ diff }})</span>
-                                    <form method="post" action="{% url 'staff:mark_item_as_ok' room_activity.id %}" class="d-inline ms-2">
-                                        {% csrf_token %}
-                                        <input type="hidden" name="item_name" value="{{ object }}">
-                                        <button type="submit" class="mark-as-ok-btn" title="Mark as OK">
-                                            <i class="fas fa-check"></i>
-                                        </button>
-                                    </form>
-                                {% else %}
-                                    <span class="badge warning">Minor Diff ({{ diff }})</span>
-                                    <form method="post" action="{% url 'staff:mark_item_as_ok' room_activity.id %}" class="d-inline ms-2">
-                                        {% csrf_token %}
-                                        <input type="hidden" name="item_name" value="{{ object }}">
-                                        <button type="submit" class="mark-as-ok-btn" title="Mark as OK">
-                                            <i class="fas fa-check"></i>
-                                        </button>
-                                    </form>
-                                {% endif %}
-                            {% endwith %}
-                        {% elif checkout_count > count %}
-                            {% with diff=checkout_count|subtract:count %}
-                                {% if diff > threshold %}
-                                    <span class="badge info">Added ({{ diff }})</span>
-                                    <form method="post" action="{% url 'staff:mark_item_as_ok' room_activity.id %}" class="d-inline ms-2">
-                                        {% csrf_token %}
-                                        <input type="hidden" name="item_name" value="{{ object }}">
-                                        <button type="submit" class="mark-as-ok-btn" title="Mark as OK">
-                                            <i class="fas fa-check"></i>
-                                        </button>
-                                    </form>
-                                {% else %}
-                                    <span class="badge warning">Minor Diff ({{ diff }})</span>
-                                    <form method="post" action="{% url 'staff:mark_item_as_ok' room_activity.id %}" class="d-inline ms-2">
-                                        {% csrf_token %}
-                                        <input type="hidden" name="item_name" value="{{ object }}">
-                                        <button type="submit" class="mark-as-ok-btn" title="Mark as OK">
-                                            <i class="fas fa-check"></i>
-                                        </button>
-                                    </form>
-                                {% endif %}
-                            {% endwith %}
-                        {% else %}
-                            <span class="badge success">OK</span>
-                        {% endif %}
-                    </td>
-                    {% endwith %}
-                </tr>
-                {% endfor %}
-                
-                {% for object, count in normalized_checkout_counts.items %}
-                    {% if object not in normalized_checkin_counts %}
+    <div class="inventory-section">
+        <h3>
+            <i class="fas fa-clipboard-list"></i>
+            Item Inventory Comparison
+        </h3>
+        <div class="table-responsive">
+            <table class="inventory-table">
+                <thead>
                     <tr>
-                        <td><strong>{{ object|title }}</strong></td>
-                        <td>0</td>
-                        <td>{{ count }}</td>
+                        <th>Object</th>
+                        <th>Check-in Count</th>
+                        <th>Check-out Count</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for object, count in normalized_checkin_counts.items %}
+                    <tr>
                         <td>
+                            <div class="object-name">
+                                <i class="fas fa-box"></i>
+                                {{ object|title }}
+                            </div>
+                        </td>
+                        <td><span class="count-cell">{{ count }}</span></td>
+                        {% with checkout_count=normalized_checkout_counts|get_item:object|default:"0" %}
+                        <td><span class="count-cell">{{ checkout_count }}</span></td>
+                        <td class="status-cell">
                             {% if object in approved_items %}
-                                <span class="badge success">OK (Approved)</span>
-                            {% elif count > threshold %}
-                                <span class="badge info">Added ({{ count }})</span>
-                                <form method="post" action="{% url 'staff:mark_item_as_ok' room_activity.id %}" class="d-inline ms-2">
-                                    {% csrf_token %}
-                                    <input type="hidden" name="item_name" value="{{ object }}">
-                                    <button type="submit" class="mark-as-ok-btn" title="Mark as OK">
-                                        <i class="fas fa-check"></i>
-                                    </button>
-                                </form>
+                                <span class="badge success">
+                                    <i class="fas fa-check"></i>
+                                    OK (Approved)
+                                </span>
+                            {% elif checkout_count < count %}
+                                {% with diff=count|subtract:checkout_count %}
+                                    {% if diff > threshold %}
+                                        <span class="badge danger">
+                                            <i class="fas fa-exclamation-circle"></i>
+                                            Missing ({{ diff }})
+                                        </span>
+                                        <form method="post" action="{% url 'staff:mark_item_as_ok' room_activity.id %}" class="d-inline">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="item_name" value="{{ object }}">
+                                            <button type="submit" class="mark-as-ok-btn" title="Mark as OK">
+                                                <i class="fas fa-check"></i>
+                                                Mark as OK
+                                            </button>
+                                        </form>
+                                    {% else %}
+                                        <span class="badge warning">
+                                            <i class="fas fa-exclamation-triangle"></i>
+                                            Minor Diff ({{ diff }})
+                                        </span>
+                                        <form method="post" action="{% url 'staff:mark_item_as_ok' room_activity.id %}" class="d-inline">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="item_name" value="{{ object }}">
+                                            <button type="submit" class="mark-as-ok-btn" title="Mark as OK">
+                                                <i class="fas fa-check"></i>
+                                                Mark as OK
+                                            </button>
+                                        </form>
+                                    {% endif %}
+                                {% endwith %}
+                            {% elif checkout_count > count %}
+                                {% with diff=checkout_count|subtract:count %}
+                                    {% if diff > threshold %}
+                                        <span class="badge info">
+                                            <i class="fas fa-plus-circle"></i>
+                                            Added ({{ diff }})
+                                        </span>
+                                        <form method="post" action="{% url 'staff:mark_item_as_ok' room_activity.id %}" class="d-inline">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="item_name" value="{{ object }}">
+                                            <button type="submit" class="mark-as-ok-btn" title="Mark as OK">
+                                                <i class="fas fa-check"></i>
+                                                Mark as OK
+                                            </button>
+                                        </form>
+                                    {% else %}
+                                        <span class="badge warning">
+                                            <i class="fas fa-exclamation-triangle"></i>
+                                            Minor Diff ({{ diff }})
+                                        </span>
+                                        <form method="post" action="{% url 'staff:mark_item_as_ok' room_activity.id %}" class="d-inline">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="item_name" value="{{ object }}">
+                                            <button type="submit" class="mark-as-ok-btn" title="Mark as OK">
+                                                <i class="fas fa-check"></i>
+                                                Mark as OK
+                                            </button>
+                                        </form>
+                                    {% endif %}
+                                {% endwith %}
                             {% else %}
-                                <span class="badge warning">Minor Diff ({{ count }})</span>
-                                <form method="post" action="{% url 'staff:mark_item_as_ok' room_activity.id %}" class="d-inline ms-2">
-                                    {% csrf_token %}
-                                    <input type="hidden" name="item_name" value="{{ object }}">
-                                    <button type="submit" class="mark-as-ok-btn" title="Mark as OK">
-                                        <i class="fas fa-check"></i>
-                                    </button>
-                                </form>
+                                <span class="badge success">
+                                    <i class="fas fa-check"></i>
+                                    OK
+                                </span>
                             {% endif %}
                         </td>
+                        {% endwith %}
                     </tr>
-                    {% endif %}
-                {% endfor %}
-            </tbody>
-        </table>
+                    {% endfor %}
+                    
+                    {% for object, count in normalized_checkout_counts.items %}
+                        {% if object not in normalized_checkin_counts %}
+                        <tr>
+                            <td>
+                                <div class="object-name">
+                                    <i class="fas fa-box"></i>
+                                    {{ object|title }}
+                                </div>
+                            </td>
+                            <td><span class="count-cell">0</span></td>
+                            <td><span class="count-cell">{{ count }}</span></td>
+                            <td class="status-cell">
+                                {% if object in approved_items %}
+                                    <span class="badge success">
+                                        <i class="fas fa-check"></i>
+                                        OK (Approved)
+                                    </span>
+                                {% elif count > threshold %}
+                                    <span class="badge info">
+                                        <i class="fas fa-plus-circle"></i>
+                                        Added ({{ count }})
+                                    </span>
+                                    <form method="post" action="{% url 'staff:mark_item_as_ok' room_activity.id %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="item_name" value="{{ object }}">
+                                        <button type="submit" class="mark-as-ok-btn" title="Mark as OK">
+                                            <i class="fas fa-check"></i>
+                                            Mark as OK
+                                        </button>
+                                    </form>
+                                {% else %}
+                                    <span class="badge warning">
+                                        <i class="fas fa-exclamation-triangle"></i>
+                                        Minor Diff ({{ count }})
+                                    </span>
+                                    <form method="post" action="{% url 'staff:mark_item_as_ok' room_activity.id %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="item_name" value="{{ object }}">
+                                        <button type="submit" class="mark-as-ok-btn" title="Mark as OK">
+                                            <i class="fas fa-check"></i>
+                                            Mark as OK
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 
     <div class="action-buttons mt-4 d-flex justify-content-between align-items-center">
