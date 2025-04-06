@@ -362,6 +362,7 @@
     .btn-report,
     .btn-complete,
     .btn-cancel,
+    .btn-analyze,
     .btn-report-complete {
         display: inline-flex;
         align-items: center;
@@ -385,6 +386,18 @@
         color: #495057;
     }
 
+    .btn-analyze {
+        background-color: #28a745;
+        border-color: #28a745;
+        color: #fff;
+    }
+
+    .btn-analyze:hover {
+        background-color: #218838;
+        border-color: #218838;
+        color: #fff;
+    }
+
     .btn-report {
         background-color: #dc3545;
         border-color: #dc3545;
@@ -405,6 +418,28 @@
     .btn-complete:hover {
         background-color: #218838;
         border-color: #1e7e34;
+    }
+
+    .btn-cancel {
+        background-color: #f8f9fa;
+        border-color: #dee2e6;
+        color: #6c757d;
+    }
+
+    .btn-cancel:hover {
+        background-color: #e9ecef;
+        color: #495057;
+    }
+
+    .btn-report-complete {
+        background-color: #dc3545;
+        border-color: #dc3545;
+        color: #fff;
+    }
+
+    .btn-report-complete:hover {
+        background-color: #c82333;
+        border-color: #bd2130;
     }
 
     /* Modal Styles */
@@ -475,28 +510,6 @@
     .modal-footer {
         border-top: 1px solid rgba(0,0,0,0.1);
         padding: 1.25rem;
-    }
-
-    .btn-cancel {
-        background-color: #f8f9fa;
-        border-color: #dee2e6;
-        color: #6c757d;
-    }
-
-    .btn-cancel:hover {
-        background-color: #e9ecef;
-        color: #495057;
-    }
-
-    .btn-report-complete {
-        background-color: #dc3545;
-        border-color: #dc3545;
-        color: #fff;
-    }
-
-    .btn-report-complete:hover {
-        background-color: #c82333;
-        border-color: #bd2130;
     }
 
     /* Toast Styles */
@@ -691,7 +704,7 @@
                                 </span>
                             {% elif checkout_count < count %}
                                 {% with diff=count|subtract:checkout_count %}
-                                    {% if diff > threshold %}
+                                    {% if diff > threshold or object == 'lamp' %}
                                         <span class="badge danger">
                                             <i class="fas fa-exclamation-circle"></i>
                                             Missing ({{ diff }})
@@ -721,7 +734,7 @@
                                 {% endwith %}
                             {% elif checkout_count > count %}
                                 {% with diff=checkout_count|subtract:count %}
-                                    {% if diff > threshold %}
+                                    {% if diff > threshold or object == 'lamp' %}
                                         <span class="badge info">
                                             <i class="fas fa-plus-circle"></i>
                                             Added ({{ diff }})
@@ -777,7 +790,7 @@
                                         <i class="fas fa-check"></i>
                                         OK (Approved)
                                     </span>
-                                {% elif count > threshold %}
+                                {% elif count > threshold or object == 'lamp' %}
                                     <span class="badge info">
                                         <i class="fas fa-plus-circle"></i>
                                         Added ({{ count }})
@@ -819,7 +832,7 @@
                 </a>
                 
                 <div>
-                    <a href="{% url 'staff:misplaced_items_analysis' activity_id=room_activity.id %}" class="btn btn-primary me-2">
+                    <a href="{% url 'staff:misplaced_items_analysis' activity_id=room_activity.id %}" class="btn-analyze me-2">
                         <i class="fas fa-exchange-alt"></i> Analyze Misplaced Items
                     </a>
                     
