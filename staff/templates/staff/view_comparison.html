@@ -531,53 +531,53 @@
     <div class="page-header">
         <h2>Room {{ room_activity.room_number }} Comparison</h2>
         <p class="text-muted">Comparing check-in and check-out state</p>
-    </div>
+        </div>
 
     <div class="status-banner {% if room_activity.has_missing_items %}warning{% else %}success{% endif %}">
         <h4 class="mb-2">
-            {% if room_activity.has_missing_items %}
+                    {% if room_activity.has_missing_items %}
             <i class="fas fa-exclamation-triangle"></i> Missing Items Detected
-            {% else %}
-            <i class="fas fa-check-circle"></i> All Items Accounted For
-            {% endif %}
+                    {% else %}
+                    <i class="fas fa-check-circle"></i> All Items Accounted For
+                    {% endif %}
         </h4>
-        {% if room_activity.has_missing_items %}
+                {% if room_activity.has_missing_items %}
         <p class="mb-2">Our system has detected items that were present during check-in but are missing or misplaced during check-out.</p>
-        {% else %}
+                {% else %}
         <p class="mb-2">All items detected during check-in were also detected during check-out. No missing items found.</p>
-        {% endif %}
+                {% endif %}
         <small class="text-muted"><i class="fas fa-info-circle"></i> Detection threshold: {{ threshold }} items</small>
-    </div>
-
+            </div>
+            
     <div class="image-comparison">
         <div class="image-card">
             <div class="image-card-header">
                 <h3>Check-In Image</h3>
-                <small class="text-muted">{{ room_activity.check_in_time }}</small>
-            </div>
+                            <small class="text-muted">{{ room_activity.check_in_time }}</small>
+                        </div>
             <div class="image-card-body">
-                {% if checkin_detection %}
+                            {% if checkin_detection %}
                 <img src="{{ checkin_detection.processed_image.url }}" alt="Check-in Image">
-                {% else %}
-                <div class="alert alert-warning">Check-in image not available</div>
-                {% endif %}
-            </div>
-        </div>
+                            {% else %}
+                            <div class="alert alert-warning">Check-in image not available</div>
+                            {% endif %}
+                        </div>
+                    </div>
 
         <div class="image-card">
             <div class="image-card-header">
                 <h3>Check-Out Image</h3>
-                <small class="text-muted">{{ room_activity.check_out_time }}</small>
-            </div>
+                            <small class="text-muted">{{ room_activity.check_out_time }}</small>
+                        </div>
             <div class="image-card-body">
-                {% if checkout_detection %}
+                            {% if checkout_detection %}
                 <img src="{{ checkout_detection.processed_image.url }}" alt="Check-out Image">
-                {% else %}
-                <div class="alert alert-warning">Check-out image not available</div>
-                {% endif %}
-            </div>
-        </div>
-    </div>
+                            {% else %}
+                            <div class="alert alert-warning">Check-out image not available</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
 
     <div class="room-details">
         <h3>Room Details</h3>
@@ -594,12 +594,12 @@
                 <strong>Check-Out Time</strong>
                 <span>{{ room_activity.check_out_time }}</span>
             </div>
-            {% if room_activity.notes %}
+                    {% if room_activity.notes %}
             <div class="detail-item">
                 <strong>Notes</strong>
                 <span>{{ room_activity.notes }}</span>
             </div>
-            {% endif %}
+                    {% endif %}
         </div>
 
         <div class="text-center mt-4">
@@ -616,9 +616,9 @@
     <div class="status-cards">
         <div class="status-card missing">
             <h4><i class="fas fa-times-circle"></i> Missing Items</h4>
-            {% if missing_objects %}
+                {% if missing_objects %}
             <ul class="item-list">
-                {% for item, count in missing_objects.items %}
+                    {% for item, count in missing_objects.items %}
                 <li><i class="fas fa-minus-circle text-danger"></i> {{ item }}: {{ count }}</li>
                 {% endfor %}
             </ul>
@@ -648,15 +648,15 @@
             <ul class="item-list">
                 {% for item, count in shifted_objects.items %}
                 <li><i class="fas fa-exchange-alt text-warning"></i> {{ item }}: {{ count }}</li>
-                {% endfor %}
-            </ul>
+                    {% endfor %}
+                    </ul>
             {% else %}
             <p class="mb-0">All items remain in their original positions.</p>
             {% endif %}
         </div>
-    </div>
-
-    <div class="inventory-section">
+                </div>
+                
+                <div class="inventory-section">
         <h3>
             <i class="fas fa-clipboard-list"></i>
             Item Inventory Comparison
@@ -664,14 +664,14 @@
         <div class="table-responsive">
             <table class="inventory-table">
                 <thead>
-                    <tr>
-                        <th>Object</th>
-                        <th>Check-in Count</th>
-                        <th>Check-out Count</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
+                                <tr>
+                                    <th>Object</th>
+                                    <th>Check-in Count</th>
+                                    <th>Check-out Count</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
                     {% for object, count in normalized_checkin_counts.items %}
                     <tr>
                         <td>
@@ -770,7 +770,7 @@
                                 </div>
                             </td>
                             <td><span class="count-cell">0</span></td>
-                            <td><span class="count-cell">{{ count }}</span></td>
+                                    <td><span class="count-cell">{{ count }}</span></td>
                             <td class="status-cell">
                                 {% if object in approved_items %}
                                     <span class="badge success">
@@ -790,7 +790,7 @@
                                             Mark as OK
                                         </button>
                                     </form>
-                                {% else %}
+                                        {% else %}
                                     <span class="badge warning">
                                         <i class="fas fa-exclamation-triangle"></i>
                                         Minor Diff ({{ count }})
@@ -803,30 +803,36 @@
                                             Mark as OK
                                         </button>
                                     </form>
-                                {% endif %}
-                            </td>
-                        </tr>
+                                        {% endif %}
+                                    </td>
+                                </tr>
                         {% endif %}
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                </div>
     </div>
-
+            
     <div class="action-buttons mt-4 d-flex justify-content-between align-items-center">
         <a href="{% url 'staff:dashboard' %}" class="btn-back">
-            <i class="fas fa-arrow-left"></i> Back to Dashboard
-        </a>
-        
-        {% if room_activity.has_missing_items or added_objects or shifted_objects %}
-        <button class="btn-report" data-bs-toggle="modal" data-bs-target="#reportModal" id="reportIssuesBtn">
-            <i class="fas fa-flag"></i> Report Issues
-        </button>
-        {% else %}
-        <a href="{% url 'staff:dashboard' %}" class="btn-complete" id="completeBtn">
-            <i class="fas fa-check-circle"></i> Complete Check-Out
-        </a>
-        {% endif %}
+                    <i class="fas fa-arrow-left"></i> Back to Dashboard
+                </a>
+                
+                <div>
+                    <a href="{% url 'staff:misplaced_items_analysis' activity_id=room_activity.id %}" class="btn btn-primary me-2">
+                        <i class="fas fa-exchange-alt"></i> Analyze Misplaced Items
+                    </a>
+                    
+            {% if room_activity.has_missing_items or added_objects or shifted_objects %}
+            <button class="btn-report" data-bs-toggle="modal" data-bs-target="#reportModal" id="reportIssuesBtn">
+                <i class="fas fa-flag"></i> Report Issues
+                </button>
+                {% else %}
+            <a href="{% url 'staff:dashboard' %}" class="btn-complete" id="completeBtn">
+                    <i class="fas fa-check-circle"></i> Complete Check-Out
+                </a>
+                {% endif %}
+        </div>
     </div>
 </div>
 
@@ -889,8 +895,8 @@
                             <span class="item-name">{{ item }}</span>
                             {% if count %}<span class="item-count">{{ count }}</span>{% endif %}
                         </li>
-                    {% endfor %}
-                    </ul>
+                {% endfor %}
+                </ul>
                 </div>
                 {% endif %}
                 

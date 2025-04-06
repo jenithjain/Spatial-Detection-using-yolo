@@ -1,0 +1,415 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }} - ScanFlow{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4 mb-5">
+    <div class="row">
+        <div class="col-md-12">
+            <!-- Page Header -->
+            <div class="d-sm-flex align-items-center justify-content-between mb-4">
+                <div>
+                    <h1 class="h3 mb-0 text-gray-800">{{ page_title }}</h1>
+                    <p class="mb-0 text-muted">Comprehensive analysis of room activities and trends</p>
+                </div>
+                <div class="d-flex">
+                    <a href="{% url 'manager:dashboard' %}" class="btn btn-outline-secondary mr-2">
+                        <i class="fas fa-chevron-left"></i> Back to Dashboard
+                    </a>
+                    <a href="{% url 'manager:inventory' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-clipboard-list"></i> View Inventory
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Analytics Overview Cards -->
+            <div class="row mb-4">
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-primary shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                        Total Rooms</div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_rooms }}</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-door-open fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-success shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                        Total Activities</div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_activities }}</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-warning shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                        Total Missing Items</div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_missing_items }}</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-xl-3 col-md-6 mb-4">
+                    <div class="card border-left-info shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                        Avg. Confidence Score</div>
+                                    <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                        {% with total_score=0 count=0 %}
+                                            {% for room_data in rooms_with_data %}
+                                                {% if room_data.avg_confidence_score > 0 %}
+                                                    {% with total_score=total_score|add:room_data.avg_confidence_score count=count|add:1 %}{% endwith %}
+                                                {% endif %}
+                                            {% endfor %}
+                                            {% if count > 0 %}
+                                                {{ total_score|floatformat:1 }}%
+                                            {% else %}
+                                                N/A
+                                            {% endif %}
+                                        {% endwith %}
+                                    </div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-chart-line fa-2x text-gray-300"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Advanced Analytics Section -->
+            <section class="mt-8 bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-2xl font-bold mb-6 text-gray-800">Advanced Analytics</h2>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                    <!-- Missing Items Distribution -->
+                    <div class="bg-white rounded-lg shadow p-4">
+                        <h3 class="font-semibold text-gray-700 mb-4">Top Missing Items Distribution</h3>
+                        <div class="h-64">
+                            <canvas id="missingItemsPieChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <!-- Confidence Score Distribution -->
+                    <div class="bg-white rounded-lg shadow p-4">
+                        <h3 class="font-semibold text-gray-700 mb-4">Confidence Score Distribution</h3>
+                        <div class="h-64">
+                            <canvas id="confidenceDistributionChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Common Damage Types -->
+                    <div class="bg-white rounded-lg shadow p-4">
+                        <h3 class="font-semibold text-gray-700 mb-4">Common Damage Types</h3>
+                        <div class="h-64">
+                            <canvas id="damageTypesChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <!-- Room Activity Heat Map -->
+                    <div class="bg-white rounded-lg shadow p-4">
+                        <h3 class="font-semibold text-gray-700 mb-4">Room Missing Items Rate</h3>
+                        <div class="h-64">
+                            <canvas id="roomHeatmapChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Room Performance Radar -->
+                <div class="mt-6 bg-white rounded-lg shadow p-4">
+                    <h3 class="font-semibold text-gray-700 mb-4">Room Performance Analysis</h3>
+                    <div class="h-80">
+                        <canvas id="roomPerformanceRadar"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Room Analysis Section -->
+            {% include 'admin/analysis.html' %}
+            
+            <!-- Analysis Actions -->
+            <div class="row mb-4">
+                <div class="col-12 text-center">
+                    <a href="#" class="btn btn-primary mx-2">
+                        <i class="fas fa-file-export"></i> Export Analysis Report
+                    </a>
+                    <a href="#" class="btn btn-success mx-2">
+                        <i class="fas fa-chart-bar"></i> Generate Trend Graph
+                    </a>
+                    <a href="#" class="btn btn-secondary mx-2">
+                        <i class="fas fa-print"></i> Print Summary
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js Library -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- Initialize Charts -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Sample data - in production this would come from your Django views
+    const missingItemsData = {
+        labels: ['Towels', 'Remote Control', 'Pillows', 'Soap', 'Other'],
+        datasets: [{
+            data: [45, 32, 18, 12, 8],
+            backgroundColor: [
+                'rgba(255, 99, 132, 0.7)',
+                'rgba(54, 162, 235, 0.7)',
+                'rgba(255, 206, 86, 0.7)',
+                'rgba(75, 192, 192, 0.7)',
+                'rgba(153, 102, 255, 0.7)'
+            ],
+            borderColor: [
+                'rgba(255, 99, 132, 1)',
+                'rgba(54, 162, 235, 1)',
+                'rgba(255, 206, 86, 1)',
+                'rgba(75, 192, 192, 1)',
+                'rgba(153, 102, 255, 1)'
+            ],
+            borderWidth: 1
+        }]
+    };
+
+    // Confidence Score Distribution
+    const confidenceData = {
+        labels: ['90-100%', '80-89%', '70-79%', '60-69%', 'Below 60%'],
+        datasets: [{
+            label: 'Rooms',
+            data: [12, 19, 8, 5, 2],
+            backgroundColor: [
+                'rgba(75, 192, 192, 0.7)',
+                'rgba(102, 187, 106, 0.7)',
+                'rgba(255, 206, 86, 0.7)',
+                'rgba(255, 159, 64, 0.7)',
+                'rgba(255, 99, 132, 0.7)'
+            ],
+            borderColor: [
+                'rgba(75, 192, 192, 1)',
+                'rgba(102, 187, 106, 1)',
+                'rgba(255, 206, 86, 1)',
+                'rgba(255, 159, 64, 1)',
+                'rgba(255, 99, 132, 1)'
+            ],
+            borderWidth: 1
+        }]
+    };
+
+    // Damage Types
+    const damageData = {
+        labels: ['Water Damage', 'Broken Furniture', 'Wall Marks', 'Carpet Stains', 'Electronics'],
+        datasets: [{
+            label: 'Frequency',
+            data: [28, 22, 16, 12, 9],
+            backgroundColor: 'rgba(54, 162, 235, 0.7)',
+            borderColor: 'rgba(54, 162, 235, 1)',
+            borderWidth: 1
+        }]
+    };
+
+    // Room Heatmap (Missing Items Rate)
+    const heatmapData = {
+        labels: ['Room 101', 'Room 102', 'Room 201', 'Room 202', 'Room 301'],
+        datasets: [{
+            label: 'Missing Items Rate (%)',
+            data: [8, 12, 5, 15, 3],
+            backgroundColor: function(context) {
+                const value = context.dataset.data[context.dataIndex];
+                if (value < 5) return 'rgba(75, 192, 192, 0.7)';
+                else if (value < 10) return 'rgba(255, 206, 86, 0.7)';
+                else return 'rgba(255, 99, 132, 0.7)';
+            },
+            borderColor: function(context) {
+                const value = context.dataset.data[context.dataIndex];
+                if (value < 5) return 'rgba(75, 192, 192, 1)';
+                else if (value < 10) return 'rgba(255, 206, 86, 1)';
+                else return 'rgba(255, 99, 132, 1)';
+            },
+            borderWidth: 1
+        }]
+    };
+
+    // Room Performance Radar
+    const radarData = {
+        labels: [
+            'Inventory Accuracy',
+            'Cleanliness',
+            'Maintenance Score',
+            'Guest Satisfaction',
+            'Efficiency'
+        ],
+        datasets: [
+            {
+                label: 'Room 101',
+                data: [85, 90, 78, 88, 92],
+                backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                borderColor: 'rgba(255, 99, 132, 1)',
+                pointBackgroundColor: 'rgba(255, 99, 132, 1)',
+                pointBorderColor: '#fff',
+                pointHoverBackgroundColor: '#fff',
+                pointHoverBorderColor: 'rgba(255, 99, 132, 1)'
+            },
+            {
+                label: 'Room 202',
+                data: [90, 85, 92, 80, 88],
+                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                pointBackgroundColor: 'rgba(54, 162, 235, 1)',
+                pointBorderColor: '#fff',
+                pointHoverBackgroundColor: '#fff',
+                pointHoverBorderColor: 'rgba(54, 162, 235, 1)'
+            }
+        ]
+    };
+
+    // Initialize all charts
+    // Missing Items Pie Chart
+    new Chart(document.getElementById('missingItemsPieChart').getContext('2d'), {
+        type: 'pie',
+        data: missingItemsData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right'
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.raw || 0;
+                            const total = context.dataset.data.reduce((acc, val) => acc + val, 0);
+                            const percentage = Math.round((value / total) * 100);
+                            return `${label}: ${value} (${percentage}%)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // Confidence Distribution Chart
+    new Chart(document.getElementById('confidenceDistributionChart').getContext('2d'), {
+        type: 'bar',
+        data: confidenceData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Number of Rooms'
+                    }
+                }
+            }
+        }
+    });
+
+    // Damage Types Chart
+    new Chart(document.getElementById('damageTypesChart').getContext('2d'), {
+        type: 'bar',
+        data: damageData,
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Occurrence Count'
+                    }
+                }
+            }
+        }
+    });
+
+    // Room Heatmap Chart
+    new Chart(document.getElementById('roomHeatmapChart').getContext('2d'), {
+        type: 'bar',
+        data: heatmapData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 20,
+                    title: {
+                        display: true,
+                        text: 'Missing Items Rate (%)'
+                    }
+                }
+            }
+        }
+    });
+
+    // Room Performance Radar Chart
+    new Chart(document.getElementById('roomPerformanceRadar').getContext('2d'), {
+        type: 'radar',
+        data: radarData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            elements: {
+                line: {
+                    borderWidth: 3
+                }
+            },
+            scales: {
+                r: {
+                    angleLines: {
+                        display: true
+                    },
+                    suggestedMin: 50,
+                    suggestedMax: 100
+                }
+            }
+        }
+    });
+
+    if (window.jQuery && typeof(jQuery.fn.DataTable) !== 'undefined') {
+        // DataTable initialization
+    }
+});
+</script>
+{% endblock %} 

@@ -24,4 +24,5 @@ urlpatterns = [
     path('room/detailed-analysis/<int:activity_id>/', views.detailed_checkout_analysis, name='detailed_checkout_analysis'),
     path('room/analyze-checkout/<int:activity_id>/', views.analyze_checkout_images, name='analyze_checkout_images'),
     path('api/analyze-checkout/', views.analyze_checkout, name='api_analyze_checkout'),
+    path('room/misplaced-items/<int:activity_id>/', views.misplaced_items_analysis, name='misplaced_items_analysis'),
 ] 

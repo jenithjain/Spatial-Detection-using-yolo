@@ -1,0 +1,81 @@
+<!-- Room Inventory Overview Section -->
+<div class="card shadow mb-4">
+    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+        <h6 class="m-0 font-weight-bold text-primary">Room Inventory Overview</h6>
+        <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#collapseInventory" aria-expanded="true" aria-controls="collapseInventory">
+            <i class="fas fa-chevron-down"></i> Toggle View
+        </button>
+    </div>
+    <div class="collapse show" id="collapseInventory">
+        <div class="card-body">
+            {% if rooms_with_data %}
+            <div class="row">
+                {% for room_data in rooms_with_data %}
+                <div class="col-lg-4 col-md-6 mb-4">
+                    <div class="card h-100 border-left-primary shadow-sm">
+                        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                            <h6 class="m-0 font-weight-bold">Room {{ room_data.room.room_number }} - {{ room_data.room.room_type }}</h6>
+                            <span class="badge bg-primary">{{ room_data.inventory.count }} items</span>
+                        </div>
+                        <div class="card-body">
+                            {% if room_data.inventory %}
+                            <div class="table-responsive">
+                                <table class="table table-sm table-borderless">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Item</th>
+                                            <th class="text-center">Qty</th>
+                                            <th class="text-center">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for item in room_data.inventory %}
+                                        <tr>
+                                            <td>{{ item.item_name }}</td>
+                                            <td class="text-center">{{ item.quantity }}</td>
+                                            <td class="text-center">
+                                                {% if item.item_name in room_data.top_issues|dictsort:"0"|first|first %}
+                                                    <span class="badge bg-danger">Missing</span>
+                                                {% else %}
+                                                    <span class="badge bg-success">Available</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <p class="text-muted text-center my-3">No inventory items recorded for this room.</p>
+                            {% endif %}
+                        </div>
+                        <div class="card-footer bg-transparent">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">
+                                    {% if room_data.missing_items_count > 0 %}
+                                        <span class="text-danger">
+                                            <i class="fas fa-exclamation-circle"></i> {{ room_data.missing_items_count }} missing items detected
+                                        </span>
+                                    {% else %}
+                                        <span class="text-success">
+                                            <i class="fas fa-check-circle"></i> All items accounted for
+                                        </span>
+                                    {% endif %}
+                                </small>
+                                <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#roomModal{{ room_data.room.id }}">
+                                    Details
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                <p class="mb-0">No rooms have been set up yet. Please add rooms and their inventory items.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div> 
