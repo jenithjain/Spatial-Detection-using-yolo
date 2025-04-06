@@ -1,280 +1,288 @@
-{% extends 'base.html' %}
+{% extends 'manager/base.html' %}
 {% load static %}
 
 {% block title %}Manager Dashboard{% endblock %}
 
 {% block content %}
-<div class="container-fluid mt-4">
-    <div class="row">
-        <div class="col-md-12">
-            <div class="card shadow mb-4">
-                <div class="card-header bg-primary text-white">
-                    <h3 class="card-title mb-0">Welcome, {{ manager.organization_name }}</h3>
-                </div>
-                <div class="card-body">
-                    <div class="row mb-4">
-                        <div class="col-md-6">
-                            <h4>Organization Details</h4>
-                            <p><strong>Name:</strong> {{ manager.organization_name }}</p>
-                            <p><strong>Email:</strong> {{ manager.user.email }}</p>
-                            <p><strong>Phone:</strong> {{ manager.phone_number }}</p>
-                        </div>
-                        <div class="col-md-6 text-end">
-                            <a href="{% url 'staff:register' %}" class="btn btn-primary">
-                                Add New Staff Member
-                            </a>
-                        </div>
-                    </div>
-
-                    <!-- Analytics Overview Cards -->
-                    <div class="row mb-4">
-                        <div class="col-xl-3 col-md-6 mb-4">
-                            <div class="card border-left-primary shadow h-100 py-2">
-                                <div class="card-body">
-                                    <div class="row no-gutters align-items-center">
-                                        <div class="col mr-2">
-                                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                                Total Rooms</div>
-                                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_rooms }}</div>
-                                        </div>
-                                        <div class="col-auto">
-                                            <i class="fas fa-door-open fa-2x text-gray-300"></i>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="col-xl-3 col-md-6 mb-4">
-                            <div class="card border-left-success shadow h-100 py-2">
-                                <div class="card-body">
-                                    <div class="row no-gutters align-items-center">
-                                        <div class="col mr-2">
-                                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                                                Total Activities</div>
-                                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_activities }}</div>
-                                        </div>
-                                        <div class="col-auto">
-                                            <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="col-xl-3 col-md-6 mb-4">
-                            <div class="card border-left-warning shadow h-100 py-2">
-                                <div class="card-body">
-                                    <div class="row no-gutters align-items-center">
-                                        <div class="col mr-2">
-                                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                                                Total Missing Items</div>
-                                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_missing_items }}</div>
-                                        </div>
-                                        <div class="col-auto">
-                                            <i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="col-xl-3 col-md-6 mb-4">
-                            <div class="card border-left-info shadow h-100 py-2">
-                                <div class="card-body">
-                                    <div class="row no-gutters align-items-center">
-                                        <div class="col mr-2">
-                                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
-                                                Staff Members</div>
-                                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ staff_members.count }}</div>
-                                        </div>
-                                        <div class="col-auto">
-                                            <i class="fas fa-users fa-2x text-gray-300"></i>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Data Visualization Section -->
-                    <div class="card shadow mb-4">
-                        <div class="card-header py-3 d-flex justify-content-between align-items-center">
-                            <h6 class="m-0 font-weight-bold text-primary">Data Visualization</h6>
-                            <div>
-                                <a href="{% url 'manager:analysis' %}" class="btn btn-sm btn-primary">
-                                    View Full Analysis
-                                </a>
-                            </div>
-                        </div>
-                        <div class="card-body">
-                            <div class="row">
-                                <!-- Missing Items by Room Chart -->
-                                <div class="col-xl-6 col-lg-6 mb-4">
-                                    <div class="card shadow h-100">
-                                        <div class="card-header py-3">
-                                            <h6 class="m-0 font-weight-bold text-primary">Missing Items by Room</h6>
-                                        </div>
-                                        <div class="card-body">
-                                            <div class="chart-container" style="position: relative; height:300px;">
-                                                <canvas id="missingItemsChart"></canvas>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <!-- Room Activities Chart -->
-                                <div class="col-xl-6 col-lg-6 mb-4">
-                                    <div class="card shadow h-100">
-                                        <div class="card-header py-3">
-                                            <h6 class="m-0 font-weight-bold text-primary">Room Activities</h6>
-                                        </div>
-                                        <div class="card-body">
-                                            <div class="chart-container" style="position: relative; height:300px;">
-                                                <canvas id="roomActivitiesChart"></canvas>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <!-- Confidence Score Comparison Chart -->
-                                <div class="col-xl-12 col-lg-12 mb-4">
-                                    <div class="card shadow h-100">
-                                        <div class="card-header py-3">
-                                            <h6 class="m-0 font-weight-bold text-primary">Confidence Score Comparison</h6>
-                                        </div>
-                                        <div class="card-body">
-                                            <div class="chart-container" style="position: relative; height:250px;">
-                                                <canvas id="confidenceScoreChart"></canvas>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Navigation Links to Detailed Pages -->
-                    <div class="row mb-4">
-                        <div class="col-12">
-                            <div class="card shadow border-left-dark">
-                                <div class="card-body py-3">
-                                    <div class="d-flex justify-content-around align-items-center">
-                                        <a href="{% url 'manager:inventory' %}" class="btn btn-lg btn-outline-primary">
-                                            <i class="fas fa-clipboard-list mr-2"></i> View Full Inventory
-                                        </a>
-                                        <div class="vr mx-4 d-none d-md-block" style="height: 40px;"></div>
-                                        <a href="{% url 'manager:analysis' %}" class="btn btn-lg btn-outline-success">
-                                            <i class="fas fa-chart-bar mr-2"></i> View Full Analysis
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Include Room Inventory Template -->
-                    <div class="card shadow mb-4">
-                        <div class="card-header py-3 d-flex justify-content-between align-items-center">
-                            <h6 class="m-0 font-weight-bold text-primary">Room Inventory Overview</h6>
-                            <a href="{% url 'manager:inventory' %}" class="btn btn-sm btn-primary">
-                                View Full Inventory
-                            </a>
-                        </div>
-                        <div class="card-body">
-                            {% include 'admin/inventory.html' %}
-                        </div>
-                    </div>
-
-                    <!-- Include Room Analysis Template -->
-                    <div class="card shadow mb-4">
-                        <div class="card-header py-3 d-flex justify-content-between align-items-center">
-                            <h6 class="m-0 font-weight-bold text-primary">Room Analysis Dashboard</h6>
-                            <a href="{% url 'manager:analysis' %}" class="btn btn-sm btn-primary">
-                                View Full Analysis
-                            </a>
-                        </div>
-                        <div class="card-body">
-                            {% include 'admin/analysis.html' %}
-                        </div>
-                    </div>
-
-                    <!-- Staff Members Section -->
-                    <div class="card shadow mb-4">
-                        <div class="card-header py-3">
-                            <h6 class="m-0 font-weight-bold text-primary">Staff Members</h6>
-                        </div>
-                        <div class="card-body">
-                    {% if staff_members %}
-                    <div class="table-responsive">
-                                <table class="table table-bordered table-hover">
-                                    <thead class="bg-light">
-                                <tr>
-                                    <th>Name</th>
-                                    <th>Email</th>
-                                    <th>Phone</th>
-                                    <th>Role</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for staff in staff_members %}
-                                <tr>
-                                    <td>{{ staff.user.get_full_name }}</td>
-                                    <td>{{ staff.user.email }}</td>
-                                    <td>{{ staff.phone_number }}</td>
-                                    <td>{{ staff.role }}</td>
-                                    <td>
-                                        <a href="#" class="btn btn-sm btn-info">Edit</a>
-                                        <a href="#" class="btn btn-sm btn-danger">Delete</a>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                    {% else %}
-                    <p class="text-muted">No staff members registered yet.</p>
-                    {% endif %}
+<div class="container-fluid">
+    <!-- Welcome Card -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h3 class="mb-0">Welcome, {{ manager.organization_name }}</h3>
+                <a href="{% url 'staff:register' %}" class="btn btn-primary">
+                    <i class="material-icons align-middle me-1">person_add</i> Add New Staff
+                </a>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h4 class="mb-3">Organization Details</h4>
+                    <p><strong>Name:</strong> {{ manager.organization_name }}</p>
+                    <p><strong>Email:</strong> {{ manager.user.email }}</p>
+                    <p><strong>Phone:</strong> {{ manager.phone_number }}</p>
                 </div>
             </div>
         </div>
     </div>
-</div>
+
+    <!-- Analytics Overview Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-2">Total Rooms</h6>
+                            <h3 class="mb-0">{{ total_rooms }}</h3>
+                        </div>
+                        <div class="icon-shape bg-light text-primary rounded-3">
+                            <i class="material-icons">meeting_room</i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-2">Total Activities</h6>
+                            <h3 class="mb-0">{{ total_activities }}</h3>
+                        </div>
+                        <div class="icon-shape bg-light text-success rounded-3">
+                            <i class="material-icons">assignment</i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-2">Missing Items</h6>
+                            <h3 class="mb-0">{{ total_missing_items }}</h3>
+                        </div>
+                        <div class="icon-shape bg-light text-warning rounded-3">
+                            <i class="material-icons">report_problem</i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-2">Staff Members</h6>
+                            <h3 class="mb-0">{{ staff_members.count }}</h3>
+                        </div>
+                        <div class="icon-shape bg-light text-info rounded-3">
+                            <i class="material-icons">groups</i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Data Visualization Section -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">Data Visualization</h4>
+                <a href="{% url 'manager:analysis' %}" class="btn btn-primary">
+                    <i class="material-icons align-middle me-1">analytics</i> View Full Analysis
+                </a>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row g-4">
+                <!-- Missing Items by Room Chart -->
+                <div class="col-xl-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Missing Items by Room</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container" style="position: relative; height:300px;">
+                                <canvas id="missingItemsChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Room Activities Chart -->
+                <div class="col-xl-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Room Activities</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container" style="position: relative; height:300px;">
+                                <canvas id="roomActivitiesChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Confidence Score Comparison Chart -->
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Confidence Score Comparison</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container" style="position: relative; height:250px;">
+                                <canvas id="confidenceScoreChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Staff Members Section -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">Staff Members</h4>
+                <a href="{% url 'staff:register' %}" class="btn btn-primary">
+                    <i class="material-icons align-middle me-1">person_add</i> Add Staff
+                </a>
+            </div>
+        </div>
+        <div class="card-body">
+            {% if staff_members %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                            <th>Role</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for staff in staff_members %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar-circle bg-light me-3">
+                                        <i class="material-icons">person</i>
+                                    </div>
+                                    {{ staff.user.get_full_name }}
+                                </div>
+                            </td>
+                            <td>{{ staff.user.email }}</td>
+                            <td>{{ staff.phone_number }}</td>
+                            <td>
+                                <span class="badge bg-primary">{{ staff.role }}</span>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-light me-2" title="Edit">
+                                    <i class="material-icons">edit</i>
+                                </button>
+                                <button class="btn btn-sm btn-light text-danger" title="Delete">
+                                    <i class="material-icons">delete</i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-4">
+                <div class="mb-3">
+                    <i class="material-icons" style="font-size: 48px; color: var(--primary-color)">group_add</i>
+                </div>
+                <h5>No staff members registered yet</h5>
+                <p class="text-muted">Add your first staff member to get started</p>
+                <a href="{% url 'staff:register' %}" class="btn btn-primary">
+                    <i class="material-icons align-middle me-1">person_add</i> Add Staff Member
+                </a>
+            </div>
+            {% endif %}
+        </div>
     </div>
 </div>
+{% endblock %}
+{% block extra_css %}
+<style>
+    .icon-shape {
+        width: 48px;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .icon-shape i {
+        font-size: 24px;
+    }
 
-<!-- Page level scripts -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    .avatar-circle {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
 
+    .avatar-circle i {
+        font-size: 20px;
+        color: var(--primary-color);
+    }
+
+    .badge {
+        font-weight: 500;
+        padding: 0.5em 0.75em;
+    }
+
+    .btn-light {
+        background-color: var(--background-color);
+        border: 1px solid rgba(0,0,0,0.1);
+    }
+
+    .btn-light:hover {
+        background-color: #f0f0f0;
+    }
+</style>
+{% endblock %}
+
+{% block scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Initialize any data tables - check if both jQuery and DataTable are available
-        if (window.jQuery && typeof(jQuery.fn.DataTable) !== 'undefined') {
-            $('#roomAnalysisTable').DataTable({
-                "order": [[1, "desc"]]
-            });
-        }
-        
-        // Prepare data for charts
+        // Chart configurations
         const roomLabels = [{% for room_data in rooms_with_data %}'Room {{ room_data.room.room_number }}',{% endfor %}];
         const missingItemsCounts = [{% for room_data in rooms_with_data %}{{ room_data.missing_items_count }},{% endfor %}];
         const totalCheckins = [{% for room_data in rooms_with_data %}{{ room_data.total_checkins }},{% endfor %}];
         const totalCheckouts = [{% for room_data in rooms_with_data %}{{ room_data.total_checkouts }},{% endfor %}];
         const avgConfidenceScores = [{% for room_data in rooms_with_data %}{{ room_data.avg_confidence_score|default:0|floatformat:1 }},{% endfor %}];
         
-        // Chart 1: Missing Items by Room
-        const missingItemsCtx = document.getElementById('missingItemsChart').getContext('2d');
-        new Chart(missingItemsCtx, {
+        // Missing Items Chart
+        new Chart(document.getElementById('missingItemsChart').getContext('2d'), {
             type: 'bar',
             data: {
                 labels: roomLabels,
                 datasets: [{
                     label: 'Missing Items',
                     data: missingItemsCounts,
-                    backgroundColor: 'rgba(255, 99, 132, 0.7)',
-                    borderColor: 'rgba(255, 99, 132, 1)',
+                    backgroundColor: 'rgba(78, 49, 170, 0.7)',
+                    borderColor: 'rgba(78, 49, 170, 1)',
                     borderWidth: 1
                 }]
             },
@@ -284,32 +292,29 @@
                 scales: {
                     y: {
                         beginAtZero: true,
-                        ticks: {
-                            precision: 0
-                        }
+                        ticks: { precision: 0 }
                     }
                 }
             }
         });
         
-        // Chart 2: Room Activities Chart
-        const activitiesCtx = document.getElementById('roomActivitiesChart').getContext('2d');
-        new Chart(activitiesCtx, {
+        // Room Activities Chart
+        new Chart(document.getElementById('roomActivitiesChart').getContext('2d'), {
             type: 'bar',
             data: {
                 labels: roomLabels,
                 datasets: [{
                     label: 'Check-ins',
                     data: totalCheckins,
-                    backgroundColor: 'rgba(54, 162, 235, 0.7)',
-                    borderColor: 'rgba(54, 162, 235, 1)',
+                    backgroundColor: 'rgba(46, 204, 113, 0.7)',
+                    borderColor: 'rgba(46, 204, 113, 1)',
                     borderWidth: 1
                 },
                 {
                     label: 'Check-outs',
                     data: totalCheckouts,
-                    backgroundColor: 'rgba(75, 192, 192, 0.7)',
-                    borderColor: 'rgba(75, 192, 192, 1)',
+                    backgroundColor: 'rgba(52, 152, 219, 0.7)',
+                    borderColor: 'rgba(52, 152, 219, 1)',
                     borderWidth: 1
                 }]
             },
@@ -319,17 +324,14 @@
                 scales: {
                     y: {
                         beginAtZero: true,
-                        ticks: {
-                            precision: 0
-                        }
+                        ticks: { precision: 0 }
                     }
                 }
             }
         });
         
-        // Chart 3: Confidence Score Comparison
-        const confidenceCtx = document.getElementById('confidenceScoreChart').getContext('2d');
-        new Chart(confidenceCtx, {
+        // Confidence Score Chart
+        new Chart(document.getElementById('confidenceScoreChart').getContext('2d'), {
             type: 'bar',
             data: {
                 labels: roomLabels,
@@ -338,15 +340,15 @@
                     data: avgConfidenceScores,
                     backgroundColor: function(context) {
                         const value = context.dataset.data[context.dataIndex];
-                        if (value >= 80) return 'rgba(75, 192, 192, 0.7)';  // green
-                        else if (value >= 50) return 'rgba(255, 205, 86, 0.7)';  // yellow
-                        else return 'rgba(255, 99, 132, 0.7)';  // red
+                        if (value >= 80) return 'rgba(46, 204, 113, 0.7)';
+                        else if (value >= 50) return 'rgba(241, 196, 15, 0.7)';
+                        else return 'rgba(231, 76, 60, 0.7)';
                     },
                     borderColor: function(context) {
                         const value = context.dataset.data[context.dataIndex];
-                        if (value >= 80) return 'rgba(75, 192, 192, 1)';  // green
-                        else if (value >= 50) return 'rgba(255, 205, 86, 1)';  // yellow
-                        else return 'rgba(255, 99, 132, 1)';  // red
+                        if (value >= 80) return 'rgba(46, 204, 113, 1)';
+                        else if (value >= 50) return 'rgba(241, 196, 15, 1)';
+                        else return 'rgba(231, 76, 60, 1)';
                     },
                     borderWidth: 1
                 }]

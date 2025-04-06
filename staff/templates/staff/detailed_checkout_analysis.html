@@ -648,22 +648,22 @@
     <!-- Page Header -->
     <div class="page-header">
         <div class="row align-items-center">
-            <div class="col-md-8">
-                <h2>Room {{ room_activity.room_number }} Analysis</h2>
-                <p>
-                    Check-in: {{ room_activity.check_in_time|date:"F j, Y, g:i a" }}<br>
-                    {% if room_activity.check_out_time %}
-                    Check-out: {{ room_activity.check_out_time|date:"F j, Y, g:i a" }}
-                    {% endif %}
-                </p>
-            </div>
-            <div class="col-md-4 text-end">
+        <div class="col-md-8">
+            <h2>Room {{ room_activity.room_number }} Analysis</h2>
+            <p>
+                Check-in: {{ room_activity.check_in_time|date:"F j, Y, g:i a" }}<br>
+                {% if room_activity.check_out_time %}
+                Check-out: {{ room_activity.check_out_time|date:"F j, Y, g:i a" }}
+                {% endif %}
+            </p>
+        </div>
+        <div class="col-md-4 text-end">
                 <a href="{% url 'staff:view_comparison' room_activity.id %}" class="btn btn-outline-primary me-2">
-                    <i class="fas fa-arrow-left"></i> Back to Basic View
-                </a>
+                <i class="fas fa-arrow-left"></i> Back to Basic View
+            </a>
                 <a href="{% url 'staff:analyze_checkout_images' room_activity.id %}" class="btn btn-primary">
-                    <i class="fas fa-sync"></i> Re-analyze Room
-                </a>
+                <i class="fas fa-sync"></i> Re-analyze Room
+            </a>
             </div>
         </div>
     </div>
@@ -677,8 +677,8 @@
             <h3 class="summary-title">Room Analysis Summary</h3>
         </div>
         
-        <div class="row">
-            <div class="col-md-6">
+            <div class="row">
+                <div class="col-md-6">
                 <h4 class="mb-3">Overall Room Condition</h4>
                 <div class="confidence-meter">
                     <div class="progress-bar {% if analysis.confidence_score >= 80 %}bg-success{% elif analysis.confidence_score >= 60 %}bg-info{% elif analysis.confidence_score >= 40 %}bg-warning{% else %}bg-danger{% endif %}" 
@@ -716,7 +716,7 @@
                         {% endif %}
                     </div>
                 </div>
-
+                
                 <div class="mt-4">
                     <div class="summary-text">
                         <h5 class="mb-3"><i class="fas fa-list-alt me-2"></i> Analysis Results</h5>
@@ -729,39 +729,39 @@
                 <div class="summary-text mb-4">
                     <h5 class="mb-3"><i class="fas fa-clipboard-check me-2"></i> Recommendations</h5>
                     {{ analysis.recommendations }}
-                </div>
-                
+                    </div>
+                    
                 <div class="row g-3">
-                    <div class="col-4">
+                                <div class="col-4">
                         <div class="stat-card">
                             <div class="icon">
                                 <i class="fas fa-exclamation-triangle"></i>
                             </div>
-                            <h3 class="text-danger">{{ summary.yolo.missing_count }}</h3>
+                                        <h3 class="text-danger">{{ summary.yolo.missing_count }}</h3>
                             <p>Missing Items</p>
-                        </div>
-                    </div>
-                    <div class="col-4">
+                                    </div>
+                                </div>
+                                <div class="col-4">
                         <div class="stat-card">
                             <div class="icon">
                                 <i class="fas fa-plus-circle"></i>
                             </div>
-                            <h3 class="text-primary">{{ summary.yolo.added_count }}</h3>
+                                        <h3 class="text-primary">{{ summary.yolo.added_count }}</h3>
                             <p>New Items</p>
-                        </div>
-                    </div>
-                    <div class="col-4">
+                                    </div>
+                                </div>
+                                <div class="col-4">
                         <div class="stat-card">
                             <div class="icon">
                                 <i class="fas fa-tools"></i>
                             </div>
-                            <h3 class="{% if summary.damage.damage_count > 0 %}text-danger{% else %}text-success{% endif %}">
-                                {{ summary.damage.damage_count|default:"0" }}
-                            </h3>
+                                        <h3 class="{% if summary.damage.damage_count > 0 %}text-danger{% else %}text-success{% endif %}">
+                                            {{ summary.damage.damage_count|default:"0" }}
+                                        </h3>
                             <p>Damages</p>
-                        </div>
-                    </div>
-                </div>
+            </div>
+        </div>
+    </div>
 
                 {% if summary.yolo.missing_items or summary.yolo.added_items %}
                 <div class="mt-4">
@@ -773,7 +773,7 @@
                             <li class="mb-1"><i class="fas fa-dot-circle me-2 small"></i>{{ item }}</li>
                             {% endfor %}
                         </ul>
-                    </div>
+                </div>
                     {% endif %}
                     
                     {% if summary.yolo.added_items %}
@@ -784,7 +784,7 @@
                             <li class="mb-1"><i class="fas fa-dot-circle me-2 small"></i>{{ item }}</li>
                             {% endfor %}
                         </ul>
-                    </div>
+                </div>
                     {% endif %}
                 </div>
                 {% endif %}
@@ -799,23 +799,23 @@
                 <i class="fas fa-fire"></i>
             </div>
             <h3 class="result-title">Visual Change Analysis</h3>
-        </div>
-
+                                            </div>
+                                            
         <div class="metric-container">
             <div class="metric-card">
                 <div class="metric-icon">
                     <i class="fas fa-percentage"></i>
-                </div>
+                                                </div>
                 <div class="metric-content">
                     <div class="metric-value">{{ heatmap.change_percentage|floatformat:1 }}%</div>
                     <p class="metric-label">Room Area Changed</p>
-                </div>
-            </div>
-
+                                        </div>
+                                    </div>
+                                    
             <div class="metric-card">
                 <div class="metric-icon">
                     <i class="fas fa-map-marker-alt"></i>
-                </div>
+                                        </div>
                 <div class="metric-content">
                     <div class="metric-value">{{ heatmap.num_change_regions }}</div>
                     <p class="metric-label">Change Regions</p>
@@ -841,7 +841,7 @@
         </div>
         {% endif %}
     </div>
-
+    
     <!-- Damage Assessment -->
     <div class="feature-card mb-4">
         <div class="result-header">
@@ -850,43 +850,43 @@
             </div>
             <h3 class="result-title">Damage Assessment</h3>
         </div>
-
-        {% if analysis.damage_detection_result %}
-        {% with damage_result=analysis.get_damage_detection_result %}
-        {% if damage_result.damages and damage_result.damages|length > 0 %}
+                        
+                        {% if analysis.damage_detection_result %}
+                            {% with damage_result=analysis.get_damage_detection_result %}
+                                    {% if damage_result.damages and damage_result.damages|length > 0 %}
         <div class="damage-grid">
-            {% for damage in damage_result.damages %}
+                                            {% for damage in damage_result.damages %}
             <div class="damage-card">
                 <span class="damage-severity severity-{{ damage.severity }}">
-                    {{ damage.severity|title }}
-                </span>
+                                                            {{ damage.severity|title }}
+                                                        </span>
                 <h5>{{ damage.type|title }}</h5>
                 <p class="mb-2"><strong>Location:</strong> {{ damage.location }}</p>
-                <p class="mb-0 small">{{ damage.description }}</p>
-            </div>
-            {% endfor %}
-        </div>
-        {% else %}
+                                                    <p class="mb-0 small">{{ damage.description }}</p>
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    {% else %}
         <div class="metric-card">
             <div class="metric-icon">
                 <i class="fas fa-check-circle"></i>
-            </div>
+                                        </div>
             <div class="metric-content">
                 <div class="metric-value text-success">No Damage</div>
                 <p class="metric-label">Room appears to be in good condition</p>
-            </div>
-        </div>
-        {% endif %}
-        {% endwith %}
-        {% endif %}
+                                            </div>
+                                        </div>
+                                {% endif %}
+                            {% endwith %}
+                        {% endif %}
 
-        {% if analysis.damage_visualization %}
+                        {% if analysis.damage_visualization %}
         <div class="mt-4">
             <h4 class="mb-3">Damage Detection</h4>
             <img src="{{ analysis.damage_visualization.url }}" class="analysis-img hover-zoom" alt="Damage Detection">
-        </div>
-        {% endif %}
-    </div>
+                            </div>
+                        {% endif %}
+                    </div>
 
     <!-- Technical Analysis -->
     <div class="accordion mb-4" id="technicalAnalysisAccordion">
@@ -905,9 +905,9 @@
                         <div class="result-header">
                             <div class="result-icon">
                                 <i class="fas fa-vector-square"></i>
-                            </div>
+        </div>
                             <h4 class="result-title">Feature Matching</h4>
-                        </div>
+    </div>
 
                         {% if feature_result and not feature_result.error %}
                         <div class="progress-ring">
@@ -925,14 +925,14 @@
                                 {% endwith %}
                             </svg>
                             <div class="progress-text">{{ feature_result.match_percentage|floatformat:1 }}%</div>
-                        </div>
+                                </div>
                         {% endif %}
 
                         {% if analysis.feature_matching_visualization %}
                         <img src="{{ analysis.feature_matching_visualization.url }}" class="analysis-img mt-3" alt="Feature Matching">
                         {% endif %}
-                    </div>
-
+                                            </div>
+                                            
                     <!-- Color Analysis -->
                     <div class="result-card">
                         <div class="result-header">
@@ -941,20 +941,20 @@
                             </div>
                             <h4 class="result-title">Color Analysis</h4>
                         </div>
-
+                        
                         {% if color_result and not color_result.error %}
                         <div class="table-responsive">
                             <table class="table table-hover">
-                                <thead>
-                                    <tr>
-                                        <th>Method</th>
-                                        <th>Difference</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for method, values in color_result.items %}
-                                    <tr>
-                                        <td>{{ method }}</td>
+                                                <thead>
+                                                    <tr>
+                                                        <th>Method</th>
+                                                        <th>Difference</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for method, values in color_result.items %}
+                                                    <tr>
+                                                        <td>{{ method }}</td>
                                         <td>
                                             <div class="d-flex align-items-center">
                                                 <div class="progress flex-grow-1" style="height: 8px;">
@@ -964,10 +964,10 @@
                                                 <span class="ms-2">{{ values.difference|floatformat:4 }}</span>
                                             </div>
                                         </td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
+                                                    </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
                         </div>
                         {% endif %}
 
