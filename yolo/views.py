@@ -34,7 +34,7 @@ try:
     import google.generativeai as genai
     
     # Replace with your API key
-    API_KEY = "AIzaSyALnrV7Cb5fM8_PdYJGGcn2xIC932m8XVQ"  # You should store this securely, e.g., in environment variables
+    API_KEY = "*********************************"  # You should store this securely, e.g., in environment variables
     genai.configure(api_key=API_KEY)
     
     # Configure the Gemini Pro Vision model with better settings from gemini_spatial.py
