@@ -98,15 +98,3 @@ https://github.com/user-attachments/assets/4d0c6370-ed5f-45bc-81fb-007036d250bc
 > 🔍 *mAP@0.5:0.95 measures detection consistency across IoU thresholds. Scores are competitive for lightweight models and will improve with further tuning.*
 
 ---
-
-## 🏗️ System Architecture
-
-```mermaid
-graph TD
-  A[User Mobile App] --> B[Image Capture & Upload]
-  B --> C[YOLOv8n Model Inference]
-  C --> D[Object Change Detection Engine]
-  D --> E[Insight Layer: Alerts, Differences, Stats]
-  E --> F[Calling Agent (Voice/Text Alerts)]
-  E --> G[Mobile UI / Manager Dashboard]
-  G --> H[Integration APIs: Inventory, Security]
